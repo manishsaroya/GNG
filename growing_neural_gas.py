@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 pos = None
 G = None
 map_image = None
-
+import copy
 import re
 import numpy
 import sys
@@ -48,73 +48,109 @@ def read_pgm(filename, byteorder='>'):
                             offset=len(header)
                             ).reshape((int(height), int(width)))
 
-def dataset(tp, grid_size):
-  #with open('../map_inpainting/synthetic_data/ground_truth_dataset_{}.pickle'.format(grid_size),'rb') as tf:
-  with open('../topology_layer/TopologyLayer/examples/levelset/ground_truth_{}.pickle'.format(grid_size),'rb') as tf:
-    gt = pickle.load(tf)
+# def dataset(tp, grid_size):
+#   #with open('../map_inpainting/synthetic_data/ground_truth_dataset_{}.pickle'.format(grid_size),'rb') as tf:
+#   with open('../topology_layer/TopologyLayer/examples/levelset/ground_truth_{}.pickle'.format(grid_size),'rb') as tf:
+#     gt = pickle.load(tf)
 
-  # d = []
-  # if tp == 'train':
-  #   for i  in range(len(gt['train'])):
-  #     ground_truth = gt['train'][i]
-  #     d.append([ground_truth])
-  #     #d.append([convert(image),convert(mask),convert(ground_truth)])
+#   # d = []
+#   # if tp == 'train':
+#   #   for i  in range(len(gt['train'])):
+#   #     ground_truth = gt['train'][i]
+#   #     d.append([ground_truth])
+#   #     #d.append([convert(image),convert(mask),convert(ground_truth)])
 
-  # elif tp == 'val':
-  #   for i in range(len(gt['validation'])):
-  #     ground_truth = gt['validation'][i]
-  #     d.append([ground_truth])
-  #     #d.append([convert(image),convert(mask),convert(ground_truth)])
+#   # elif tp == 'val':
+#   #   for i in range(len(gt['validation'])):
+#   #     ground_truth = gt['validation'][i]
+#   #     d.append([ground_truth])
+#   #     #d.append([convert(image),convert(mask),convert(ground_truth)])
 
-  # elif tp == 'test':
-  #   for i in range(len(gt['test'])):
-  #     ground_truth = gt['test'][i]
-  #     d.append([ground_truth])
-  #     #d.append([convert(image),convert(mask),convert(ground_truth)])
+#   # elif tp == 'test':
+#   #   for i in range(len(gt['test'])):
+#   #     ground_truth = gt['test'][i]
+#   #     d.append([ground_truth])
+#   #     #d.append([convert(image),convert(mask),convert(ground_truth)])
 
-  return gt 
+#   return gt 
 
-def readFile():
-	"""Read the file and return the indices as list of lists."""
-	filename = 's.txt'
-	with open(filename) as file:
-		array2d = [[int(digit) for digit in line.split()] for line in file]
-	d = dataset("train",32)
-	#pdb.set_trace()
-	array2d = np.array(d)
-	#array2d = abs(array2d - np.ones([32,32]))
-	#plt.imshow(abs(array2d - np.ones([32,32])))
-	#plt.show()
-	return array2d
+# def readFile():
+# 	"""Read the file and return the indices as list of lists."""
+# 	filename = 's.txt'
+# 	with open(filename) as file:
+# 		array2d = [[int(digit) for digit in line.split()] for line in file]
+# 	d = dataset("train",32)
+# 	#pdb.set_trace()
+# 	array2d = np.array(d)
+# 	#array2d = abs(array2d - np.ones([32,32]))
+# 	#plt.imshow(abs(array2d - np.ones([32,32])))
+# 	#plt.show()
+# 	return array2d
 
 
-def read_file_draw_graph():
+# def read_file_draw_graph():
+# 	"""Create the graph and returns the networkx version of it 'G'."""
+# 	global pos
+# 	global G
+# 	global map_image
+# 	array2d = read_pgm("explore_gmapping_backup.pgm", byteorder='<') #readFile()
+# 	map_image = array2d
+# 	ROW, COLUMN = len(array2d), len(array2d[0])
+# 	count = 0
+
+# 	G = nx.Graph()
+# 	#pdb.set_trace()
+# 	for j in xrange(COLUMN//4):
+# 		for i in xrange(ROW//4):
+# 			#if array2d[ROW - 1 - 1*i][1*j] == 254:
+# 			if array2d[4*i][4*j] == 254:
+# 				G.add_node(count, pos=(4*j, 4*i))
+# 				count += 1
+
+# 	pos = nx.get_node_attributes(G, 'pos')
+# 	#pdb.set_trace()
+# 	# for index in pos.keys():
+# 	# 	for index2 in pos.keys():
+# 	# 		if pos[index][0] == pos[index2][0] and pos[index][1] == pos[index2][1] - 1:
+# 	# 			G.add_edge(index, index2, weight=1)
+# 	# 		if pos[index][1] == pos[index2][1] and pos[index][0] == pos[index2][0] - 1:
+# 	# 			G.add_edge(index, index2, weight=1)
+# 	return G
+
+def read_file_hilbert_maps():
 	"""Create the graph and returns the networkx version of it 'G'."""
 	global pos
 	global G
 	global map_image
-	array2d = read_pgm("explore_gmapping_backup.pgm", byteorder='<') #readFile()
-	map_image = array2d
-	ROW, COLUMN = len(array2d), len(array2d[0])
-	count = 0
+	with open('./dataset/mapdata_{}.pickle'.format(0),'rb') as tf:
+		mapdata = pickle.load(tf)
+	# convert to numpy 
+	mapdata['Xq'] = mapdata['Xq'].numpy()
+	mapdata['yq'] = mapdata['yq'].numpy()
+
+	for i in range(1,4):
+		with open('./dataset/mapdata_{}.pickle'.format(i),'rb') as tf:
+			mapdata_ = pickle.load(tf)
+			mapdata['Xq'] = np.concatenate((mapdata['Xq'], mapdata_['Xq'].numpy()), axis=0) 
+			mapdata['yq'] = np.concatenate((mapdata['yq'], mapdata_['yq'].numpy()), axis=0)
+
+
+	#array2d = read_pgm("explore_gmapping_backup.pgm", byteorder='<') #readFile()
+	#pdb.set_trace()
+	map_image = mapdata
+	#ROW, COLUMN = len(array2d), len(array2d[0])
+	#count = 0
 
 	G = nx.Graph()
 	#pdb.set_trace()
-	for j in xrange(COLUMN//4):
-		for i in xrange(ROW//4):
-			#if array2d[ROW - 1 - 1*i][1*j] == 254:
-			if array2d[4*i][4*j] == 254:
-				G.add_node(count, pos=(4*j, 4*i))
-				count += 1
+	# for j in xrange(COLUMN//4):
+	# 	for i in xrange(ROW//4):
+	# 		#if array2d[ROW - 1 - 1*i][1*j] == 254:
+	# 		if array2d[4*i][4*j] == 254:
+	# 			G.add_node(count, pos=(4*j, 4*i))
+	# 			count += 1
 
 	pos = nx.get_node_attributes(G, 'pos')
-	#pdb.set_trace()
-	for index in pos.keys():
-		for index2 in pos.keys():
-			if pos[index][0] == pos[index2][0] and pos[index][1] == pos[index2][1] - 1:
-				G.add_edge(index, index2, weight=1)
-			if pos[index][1] == pos[index2][1] and pos[index][0] == pos[index2][0] - 1:
-				G.add_edge(index, index2, weight=1)
 	return G
 
 
@@ -126,6 +162,11 @@ class GNG():
 		"""."""
 		self.graph = nx.Graph()
 		self.data = data
+		#pdb.set_trace()
+		# toggle the probabilities
+		self.data['yq'] = np.ones(len(self.data['yq'])) - self.data['yq']
+		# normalize the probabilities
+		self.data['yq'] /= np.linalg.norm(self.data['yq'], ord=1)
 		self.eps_b = eps_b
 		self.eps_n = eps_n
 		self.max_age = max_age
@@ -136,10 +177,15 @@ class GNG():
 		self.num_of_input_signals = 0
 
 		self.pos = None
+		#pdb.set_trace()
+		print(np.random.choice(len(data['Xq']), p=data['yq']))
+		#pdb.set_trace()
+		#node1 = data[np.random.randint(0, len(data))]
+		#node2 = data[np.random.randint(0, len(data))]
 
-		node1 = data[np.random.randint(0, len(data))]
-		node2 = data[np.random.randint(0, len(data))]
-
+		node1 = self.data['Xq'][np.random.choice(len(self.data['Xq']), p=self.data['yq'])]
+		node2 = self.data['Xq'][np.random.choice(len(self.data['Xq']), p=self.data['yq'])]
+		#pdb.set_trace()
 		# make sure you dont select same positions
 		if node1[0] == node2[0] and node1[1] == node2[1]:
 			print("Rerun ---------------> similar nodes selected")
@@ -248,10 +294,15 @@ class GNG():
 
 	def save_img(self, fignum, output_images_dir='images'):
 		"""."""
-		fig = pl.figure(fignum, figsize=(18,18))
+		fig = pl.figure(fignum, figsize=(8,8))
 		ax = fig.add_subplot(111)
-		pl.imshow(map_image, pl.cm.gray)
-		nx.draw(G, pos, with_labels=False, node_size=40, alpha=.3, width=1.5)
+		pl.scatter(map_image['Xq'][:, 0], map_image['Xq'][:, 1], c=map_image['yq'], cmap='jet', s=2, vmin=0, vmax=1, edgecolors='')
+		#pl.scatter(self.data['Xq'][:, 0], self.data['Xq'][:, 1], c=self.data['yq'], cmap='jet', s=2, vmin=0, vmax=(1/41269.54), edgecolors='')
+		pl.colorbar()
+		pl.xlim([-80,80]); pl.ylim([-80,80])
+		#pl.imshow(map_image, pl.cm.gray)
+		# Dont draw G 
+		#nx.draw(G, pos, with_labels=False, node_size=40, alpha=.3, width=1.5)
 		#nx.draw(G, pos, node_color='#ffffff', with_labels=False, node_size=100, alpha=1.0, width=1.5)
 		position = nx.get_node_attributes(self.graph, 'pos')
 		nx.draw(self.graph, position, node_color='r', node_size=100, with_labels=False, edge_color='b', width=2.0)
@@ -261,7 +312,9 @@ class GNG():
 		pl.clf()
 		pl.close(fignum)
 
-	def train(self, max_iterations=10000, output_images_dir='images'):
+	#def samples_plot(self)
+
+	def train(self, max_iterations=10000, output_images_dir='images_recent'):
 		"""."""
 
 		if not os.path.isdir(output_images_dir):
@@ -273,7 +326,9 @@ class GNG():
 
 		for i in xrange(1, max_iterations):
 			print("Iterating..{0:d}/{1}".format(i, max_iterations))
-			for x in self.data:
+			#pdb.set_trace()
+			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=1000, p=self.data['yq'])]
+			for x in iter_list:
 				self.update_winner(x)
 
 				# step 8: if number of input signals generated so far
@@ -334,14 +389,14 @@ class GNG():
 def main():
 	"""."""
 	global pos, G
-	G = read_file_draw_graph()
-
+	G = read_file_hilbert_maps()
+	#pdb.set_trace()
 	inList = []
 	for key, value in iteritems(pos):
 		inList.append([value[0], value[1]])
 
 	mat = np.array(inList, dtype='float64')
-	return mat
+	return copy.deepcopy(map_image)
 
 
 def sort_nicely(limages):
@@ -354,7 +409,7 @@ def sort_nicely(limages):
 
 
 def convert_images_to_gif(output_images_dir, output_gif):
-	"""Convert a list of images to a gif."""
+	"""Conveoutput_images_dirrt a list of images to a gif."""
 
 	image_dir = "{0}/*.png".format(output_images_dir)
 	list_images = glob.glob(image_dir)
@@ -367,8 +422,8 @@ if __name__ == "__main__":
 	#pdb.set_trace()
 	data = main()
 	grng = GNG(data)
-	output_images_dir = 'images'
-	output_gif = "output.gif"
+	output_images_dir = 'images_recent'
+	output_gif = "output_recent.gif"
 	if grng is not None:
-		grng.train(max_iterations=10000)
+		grng.train(max_iterations=2000)
 		convert_images_to_gif(output_images_dir, output_gif)
