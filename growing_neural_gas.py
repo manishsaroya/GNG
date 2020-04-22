@@ -48,74 +48,6 @@ def read_pgm(filename, byteorder='>'):
                             offset=len(header)
                             ).reshape((int(height), int(width)))
 
-# def dataset(tp, grid_size):
-#   #with open('../map_inpainting/synthetic_data/ground_truth_dataset_{}.pickle'.format(grid_size),'rb') as tf:
-#   with open('../topology_layer/TopologyLayer/examples/levelset/ground_truth_{}.pickle'.format(grid_size),'rb') as tf:
-#     gt = pickle.load(tf)
-
-#   # d = []
-#   # if tp == 'train':
-#   #   for i  in range(len(gt['train'])):
-#   #     ground_truth = gt['train'][i]
-#   #     d.append([ground_truth])
-#   #     #d.append([convert(image),convert(mask),convert(ground_truth)])
-
-#   # elif tp == 'val':
-#   #   for i in range(len(gt['validation'])):
-#   #     ground_truth = gt['validation'][i]
-#   #     d.append([ground_truth])
-#   #     #d.append([convert(image),convert(mask),convert(ground_truth)])
-
-#   # elif tp == 'test':
-#   #   for i in range(len(gt['test'])):
-#   #     ground_truth = gt['test'][i]
-#   #     d.append([ground_truth])
-#   #     #d.append([convert(image),convert(mask),convert(ground_truth)])
-
-#   return gt 
-
-# def readFile():
-# 	"""Read the file and return the indices as list of lists."""
-# 	filename = 's.txt'
-# 	with open(filename) as file:
-# 		array2d = [[int(digit) for digit in line.split()] for line in file]
-# 	d = dataset("train",32)
-# 	#pdb.set_trace()
-# 	array2d = np.array(d)
-# 	#array2d = abs(array2d - np.ones([32,32]))
-# 	#plt.imshow(abs(array2d - np.ones([32,32])))
-# 	#plt.show()
-# 	return array2d
-
-
-# def read_file_draw_graph():
-# 	"""Create the graph and returns the networkx version of it 'G'."""
-# 	global pos
-# 	global G
-# 	global map_image
-# 	array2d = read_pgm("explore_gmapping_backup.pgm", byteorder='<') #readFile()
-# 	map_image = array2d
-# 	ROW, COLUMN = len(array2d), len(array2d[0])
-# 	count = 0
-
-# 	G = nx.Graph()
-# 	#pdb.set_trace()
-# 	for j in xrange(COLUMN//4):
-# 		for i in xrange(ROW//4):
-# 			#if array2d[ROW - 1 - 1*i][1*j] == 254:
-# 			if array2d[4*i][4*j] == 254:
-# 				G.add_node(count, pos=(4*j, 4*i))
-# 				count += 1
-
-# 	pos = nx.get_node_attributes(G, 'pos')
-# 	#pdb.set_trace()
-# 	# for index in pos.keys():
-# 	# 	for index2 in pos.keys():
-# 	# 		if pos[index][0] == pos[index2][0] and pos[index][1] == pos[index2][1] - 1:
-# 	# 			G.add_edge(index, index2, weight=1)
-# 	# 		if pos[index][1] == pos[index2][1] and pos[index][0] == pos[index2][0] - 1:
-# 	# 			G.add_edge(index, index2, weight=1)
-# 	return G
 
 def read_file_hilbert_maps():
 	"""Create the graph and returns the networkx version of it 'G'."""
@@ -134,21 +66,8 @@ def read_file_hilbert_maps():
 			mapdata['Xq'] = np.concatenate((mapdata['Xq'], mapdata_['Xq'].numpy()), axis=0) 
 			mapdata['yq'] = np.concatenate((mapdata['yq'], mapdata_['yq'].numpy()), axis=0)
 
-
-	#array2d = read_pgm("explore_gmapping_backup.pgm", byteorder='<') #readFile()
-	#pdb.set_trace()
 	map_image = mapdata
-	#ROW, COLUMN = len(array2d), len(array2d[0])
-	#count = 0
-
 	G = nx.Graph()
-	#pdb.set_trace()
-	# for j in xrange(COLUMN//4):
-	# 	for i in xrange(ROW//4):
-	# 		#if array2d[ROW - 1 - 1*i][1*j] == 254:
-	# 		if array2d[4*i][4*j] == 254:
-	# 			G.add_node(count, pos=(4*j, 4*i))
-	# 			count += 1
 
 	pos = nx.get_node_attributes(G, 'pos')
 	return G
@@ -165,6 +84,8 @@ class GNG():
 		#pdb.set_trace()
 		# toggle the probabilities
 		self.data['yq'] = np.ones(len(self.data['yq'])) - self.data['yq']
+		#pdb.set_trace()
+		self.data['yq'] = np.exp(10*self.data['yq'])
 		# normalize the probabilities
 		self.data['yq'] /= np.linalg.norm(self.data['yq'], ord=1)
 		self.eps_b = eps_b
@@ -305,14 +226,21 @@ class GNG():
 		#nx.draw(G, pos, with_labels=False, node_size=40, alpha=.3, width=1.5)
 		#nx.draw(G, pos, node_color='#ffffff', with_labels=False, node_size=100, alpha=1.0, width=1.5)
 		position = nx.get_node_attributes(self.graph, 'pos')
-		nx.draw(self.graph, position, node_color='r', node_size=100, with_labels=False, edge_color='b', width=2.0)
+		nx.draw(self.graph, position, node_color='r', node_size=100, with_labels=False, edge_color='g', width=2.0)
 		pl.title('Growing Neural Gas')
 		pl.savefig("{0}/{1}.png".format(output_images_dir, str(fignum)))
 
 		pl.clf()
 		pl.close(fignum)
 
-	#def samples_plot(self)
+	def samples_plot(self):
+		fig = pl.figure("samples_out", figsize=(8,8))
+		ax = fig.add_subplot(111)
+
+		pl.scatter(np.array(self.samples)[:,0],np.array(self.samples)[:,1], facecolors='r')
+		pl.savefig("samples.png")
+		pl.clf()
+		pl.close("samples_out")
 
 	def train(self, max_iterations=10000, output_images_dir='images_recent'):
 		"""."""
@@ -323,11 +251,13 @@ class GNG():
 		print("Ouput images will be saved in: {0}".format(output_images_dir))
 		fignum = 0
 		self.save_img(fignum, output_images_dir)
-
+		self.samples = []
 		for i in xrange(1, max_iterations):
 			print("Iterating..{0:d}/{1}".format(i, max_iterations))
 			#pdb.set_trace()
 			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=1000, p=self.data['yq'])]
+			self.samples.extend(iter_list)
+			#pdb.set_trace()
 			for x in iter_list:
 				self.update_winner(x)
 
@@ -384,6 +314,7 @@ class GNG():
 					olderror = errorvectors[i]
 					newerror = olderror - self.d * olderror
 					self.graph.add_node(i, error=newerror)
+		self.samples_plot()
 
 
 def main():
@@ -425,5 +356,5 @@ if __name__ == "__main__":
 	output_images_dir = 'images_recent'
 	output_gif = "output_recent.gif"
 	if grng is not None:
-		grng.train(max_iterations=2000)
+		grng.train(max_iterations=10000)
 		convert_images_to_gif(output_images_dir, output_gif)
