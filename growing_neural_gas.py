@@ -24,49 +24,112 @@ import copy
 import re
 import numpy
 import sys
+import time
 numpy.set_printoptions(threshold=sys.maxsize)
 
+# Includes packages to compute topological feature dgms
+from topologylayer.nn import AlphaLayer, BarcodePolyFeature
+import torch
+
+def reduceinfo(info):
+	r = []
+	for i in info:
+		if abs(i[0]) != np.inf and abs(i[1])!= np.inf and i[0]!=i[1]:
+			r.append(i.detach().numpy())
+	return r
+
+def savepersistence(z,f,fignum, output_images_dir):
+	########### save persistence Diagram #######
+	#pdb.set_trace()
+	fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6,6))
+	ax.set(xlim=(-0.1, 3.1), ylim=(-0.1, 3.1))
+	x1, y1 = [-0.2, 10], [-0.2, 10]
+	ax.plot(x1, y1, marker = 'o')
+
+	if len(z)>0:
+		ax.plot(z[:,0], z[:,1],'bo', label="zero homology")
+	if len(f)>0:
+		ax.plot(f[:,0], f[:,1],'ro',label="first homology")
+	ax.set_title("output PersistenceDgm intel map")
+	ax.set_xlabel('Birth')
+	ax.set_ylabel('Death')
+	ax.legend()
+	#pl.axis('equal')
+	t = time.time()
+	plt.savefig(output_images_dir+'/persistence_dgm'+str(fignum)+'.png')
+
+
 def read_pgm(filename, byteorder='>'):
-    """Return image data from a raw PGM file as numpy array.
+	"""Return image data from a raw PGM file as numpy array.
 
-    Format specification: http://netpbm.sourceforge.net/doc/pgm.html
+	Format specification: http://netpbm.sourceforge.net/doc/pgm.html
 
-    """
-    with open(filename, 'rb') as f:
-        buffer = f.read()
-    try:
-        header, width, height, maxval = re.search(
-            b"(^P5\s(?:\s*#.*[\r\n])*"
-            b"(\d+)\s(?:\s*#.*[\r\n])*"
-            b"(\d+)\s(?:\s*#.*[\r\n])*"
-            b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
-    except AttributeError:
-        raise ValueError("Not a raw PGM file: '%s'" % filename)
-    return numpy.frombuffer(buffer,
-                            dtype='u1' if int(maxval) < 256 else byteorder+'u2',
-                            count=int(width)*int(height),
-                            offset=len(header)
-                            ).reshape((int(height), int(width)))
+	"""
+	with open(filename, 'rb') as f:
+		buffer = f.read()
+	try:
+		header, width, height, maxval = re.search(
+			b"(^P5\s(?:\s*#.*[\r\n])*"
+			b"(\d+)\s(?:\s*#.*[\r\n])*"
+			b"(\d+)\s(?:\s*#.*[\r\n])*"
+			b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
+	except AttributeError:
+		raise ValueError("Not a raw PGM file: '%s'" % filename)
+	return numpy.frombuffer(buffer,
+							dtype='u1' if int(maxval) < 256 else byteorder+'u2',
+							count=int(width)*int(height),
+							offset=len(header)
+							).reshape((int(height), int(width)))
 
 
-def read_file_hilbert_maps():
+def read_file_hilbert_maps(map_ ='intel'):
 	"""Create the graph and returns the networkx version of it 'G'."""
 	global pos
 	global G
 	global map_image
-	with open('./dataset/mapdata_{}.pickle'.format(0),'rb') as tf:
-		mapdata = pickle.load(tf)
-	# convert to numpy 
-	mapdata['Xq'] = mapdata['Xq'].numpy()
-	mapdata['yq'] = mapdata['yq'].numpy()
 
-	for i in range(1,4):
-		with open('./dataset/mapdata_{}.pickle'.format(i),'rb') as tf:
+	if map_=='intel':
+		with open('./dataset/mapdata_{}.pickle'.format(694),'rb') as tf:
+			mapdata = pickle.load(tf)
+		# convert to numpy 
+		mapdata['Xq'] = mapdata['X']
+		mapdata['yq'] = mapdata['Y']
+	else:
+		mapdata = {}
+		with open('./dataset/mapdata_{}.pickle'.format(0),'rb') as tf:
 			mapdata_ = pickle.load(tf)
-			mapdata['Xq'] = np.concatenate((mapdata['Xq'], mapdata_['Xq'].numpy()), axis=0) 
-			mapdata['yq'] = np.concatenate((mapdata['yq'], mapdata_['yq'].numpy()), axis=0)
+			mapdata['Xq'] = mapdata_['Xq'].numpy()
+			mapdata['yq'] = mapdata_['yq'].numpy()
+		#dictionary.get("bogus")
+		#['Xq'] = []
+		#mapdata['yq'] = []
+		for i in range(1,4):
+			with open('./dataset/mapdata_{}.pickle'.format(i),'rb') as tf:
+				mapdata_ = pickle.load(tf)
+				mapdata['Xq'] = np.concatenate((mapdata.get('Xq'), mapdata_['Xq'].numpy()), axis=0) 
+				mapdata['yq'] = np.concatenate((mapdata.get('yq'), mapdata_['yq'].numpy()), axis=0)
 
 	map_image = mapdata
+
+	# override with a simple test
+	map_array = np.array([[0.9,0.9,0.9,0.9,0.9],
+					 [0.9,0,0,0,0.9],
+					 [0.9,0,0.5,0,0.9],
+					 [0.9,0,0,0,0.9],
+					 [0.9,0.9,0.9,0.9,0.9]]
+					 )
+
+	map_image = {}
+	map_image['Xq'] = []
+	map_image['yq'] = []
+	for i in range(len(map_array)):
+		for j in range(len(map_array[0])):
+			map_image['Xq'].append([i,j])
+			map_image['yq'].append(map_array[i][j])
+	map_image['Xq'] = np.array(map_image['Xq'])
+	map_image['yq'] = np.array(map_image['yq'])
+	#pdb.set_trace()
+	#pdb.set_trace()
 	G = nx.Graph()
 
 	pos = nx.get_node_attributes(G, 'pos')
@@ -76,7 +139,7 @@ def read_file_hilbert_maps():
 class GNG():
 	"""."""
 
-	def __init__(self, data, eps_b=0.05, eps_n=0.0005, max_age=25,
+	def __init__(self, data, eps_b=0.05, eps_n=0.0005, max_age=30,
 				 lambda_=100, alpha=0.5, d=0.0005, max_nodes=100):
 		"""."""
 		self.graph = nx.Graph()
@@ -215,34 +278,52 @@ class GNG():
 
 	def save_img(self, fignum, output_images_dir='images'):
 		"""."""
-		fig = pl.figure(fignum, figsize=(8,8))
+		fig = pl.figure(fignum, figsize=(10,10))
 		ax = fig.add_subplot(111)
-		pl.scatter(map_image['Xq'][:, 0], map_image['Xq'][:, 1], c=map_image['yq'], cmap='jet', s=2, vmin=0, vmax=1, edgecolors='')
+		pl.scatter(map_image['Xq'][:, 0], map_image['Xq'][:, 1], c=map_image['yq'], cmap='jet', s=100, vmin=0, vmax=1, edgecolors='')
 		#pl.scatter(self.data['Xq'][:, 0], self.data['Xq'][:, 1], c=self.data['yq'], cmap='jet', s=2, vmin=0, vmax=(1/41269.54), edgecolors='')
 		pl.colorbar()
-		pl.xlim([-80,80]); pl.ylim([-80,80])
+		#pl.xlim([-40,40]); pl.ylim([-40,40])
 		#pl.imshow(map_image, pl.cm.gray)
 		# Dont draw G 
 		#nx.draw(G, pos, with_labels=False, node_size=40, alpha=.3, width=1.5)
 		#nx.draw(G, pos, node_color='#ffffff', with_labels=False, node_size=100, alpha=1.0, width=1.5)
 		position = nx.get_node_attributes(self.graph, 'pos')
-		nx.draw(self.graph, position, node_color='r', node_size=100, with_labels=False, edge_color='g', width=2.0)
+		nx.draw(self.graph, position, node_color='r', node_size=25, with_labels=False, edge_color='g', width=2.0)
+		ages_ = nx.get_edge_attributes(self.graph,'age')
+		#pdb.set_trace()
+		nx.draw_networkx_edge_labels(self.graph,position,edge_labels=ages_, font_size=7)
 		pl.title('Growing Neural Gas')
 		pl.savefig("{0}/{1}.png".format(output_images_dir, str(fignum)))
 
 		pl.clf()
 		pl.close(fignum)
 
+		# draw the persistence dgm
+		data = []
+		for key, value in position.items():
+			data.append(value)
+		if len(data)> 2:
+			layer = AlphaLayer(maxdim=1)
+			x = torch.autograd.Variable(torch.tensor(data).type(torch.float), requires_grad=True)
+			f1 = BarcodePolyFeature(1,2,0)
+			dgm, bool_ = layer(x)
+			#pdb.set_trace()
+			z = np.asarray(reduceinfo(dgm[0]))
+			f = np.asarray(reduceinfo(dgm[1]))
+			savepersistence(z,f,fignum,output_images_dir)
+
+
 	def samples_plot(self):
 		fig = pl.figure("samples_out", figsize=(8,8))
 		ax = fig.add_subplot(111)
 
 		pl.scatter(np.array(self.samples)[:,0],np.array(self.samples)[:,1], facecolors='r')
-		pl.savefig("samples.png")
+		pl.savefig("samples_intel.png")
 		pl.clf()
 		pl.close("samples_out")
 
-	def train(self, max_iterations=10000, output_images_dir='images_recent'):
+	def train(self, max_iterations=10000, output_images_dir='images_intelmap'):
 		"""."""
 
 		if not os.path.isdir(output_images_dir):
@@ -255,7 +336,7 @@ class GNG():
 		for i in xrange(1, max_iterations):
 			print("Iterating..{0:d}/{1}".format(i, max_iterations))
 			#pdb.set_trace()
-			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=1000, p=self.data['yq'])]
+			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=200, p=self.data['yq'])]
 			self.samples.extend(iter_list)
 			#pdb.set_trace()
 			for x in iter_list:
@@ -320,7 +401,7 @@ class GNG():
 def main():
 	"""."""
 	global pos, G
-	G = read_file_hilbert_maps()
+	G = read_file_hilbert_maps(map_="intel")
 	#pdb.set_trace()
 	inList = []
 	for key, value in iteritems(pos):
@@ -353,8 +434,8 @@ if __name__ == "__main__":
 	#pdb.set_trace()
 	data = main()
 	grng = GNG(data)
-	output_images_dir = 'images_recent'
-	output_gif = "output_recent.gif"
+	output_images_dir = 'gng_template'
+	output_gif = "gng_template.gif"
 	if grng is not None:
-		grng.train(max_iterations=10000)
+		grng.train(max_iterations=10000, output_images_dir=output_images_dir)
 		convert_images_to_gif(output_images_dir, output_gif)
