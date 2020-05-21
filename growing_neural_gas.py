@@ -2,34 +2,27 @@
 # -*- coding: utf-8 -*-
 """Initialize module utils."""
 
-
 import numpy as np
 import networkx as nx
 import imageio
 from matplotlib import pylab as pl
-import re
 import os
 import glob
 from past.builtins import xrange
 from future.utils import iteritems
-import pdb
-import sys
-sys.path.append("../topology_layer/")
 import pickle
 import matplotlib.pyplot as plt
-pos = None
-G = None
-map_image = None
 import copy
 import re
 import numpy
 import sys
 import time
+
+pos = None
+G = None
+map_image = None
 numpy.set_printoptions(threshold=sys.maxsize)
 
-# Includes packages to compute topological feature dgms
-from topologylayer.nn import AlphaLayer, BarcodePolyFeature
-import torch
 
 def reduceinfo(info):
 	r = []
@@ -89,7 +82,7 @@ def read_file_hilbert_maps(map_ ='intel'):
 	global map_image
 
 	if map_=='intel':
-		with open('./dataset/mapdata_{}.pickle'.format(694),'rb') as tf:
+		with open('./dataset/mapdata_{}.pickle'.format(68),'rb') as tf:
 			mapdata = pickle.load(tf)
 		# convert to numpy 
 		mapdata['Xq'] = mapdata['X']
@@ -112,22 +105,23 @@ def read_file_hilbert_maps(map_ ='intel'):
 	map_image = mapdata
 
 	# override with a simple test
-	map_array = np.array([[0.9,0.9,0.9,0.9,0.9],
-					 [0.9,0,0,0,0.9],
-					 [0.9,0,0.5,0,0.9],
-					 [0.9,0,0,0,0.9],
-					 [0.9,0.9,0.9,0.9,0.9]]
-					 )
+	# map_array = np.array([[0.9,0.9,0.9,0.9,0.9],
+	# 				 [0.9,0,0,0,0.9],
+	# 				 [0.9,0,0.5,0,0.9],
+	# 				 [0.9,0,0,0,0.9],
+	# 				 [0.9,0.9,0.9,0.9,0.9]]
+	# 				 )
 
-	map_image = {}
-	map_image['Xq'] = []
-	map_image['yq'] = []
-	for i in range(len(map_array)):
-		for j in range(len(map_array[0])):
-			map_image['Xq'].append([i,j])
-			map_image['yq'].append(map_array[i][j])
-	map_image['Xq'] = np.array(map_image['Xq'])
-	map_image['yq'] = np.array(map_image['yq'])
+	#map_image = {}
+	#map_image['Xq'] = []
+	#map_image['yq'] = []
+	#for i in range(len(map_array)):
+	#	for j in range(len(map_array[0])):
+	#		map_image['Xq'].append([i,j])
+	#		map_image['yq'].append(map_array[i][j])
+	#map_image['Xq'] = np.array(map_image['Xq'])
+	#map_image['yq'] = np.array(map_image['yq'])
+	
 	#pdb.set_trace()
 	#pdb.set_trace()
 	G = nx.Graph()
@@ -298,20 +292,7 @@ class GNG():
 
 		pl.clf()
 		pl.close(fignum)
-
-		# draw the persistence dgm
-		data = []
-		for key, value in position.items():
-			data.append(value)
-		if len(data)> 2:
-			layer = AlphaLayer(maxdim=1)
-			x = torch.autograd.Variable(torch.tensor(data).type(torch.float), requires_grad=True)
-			f1 = BarcodePolyFeature(1,2,0)
-			dgm, bool_ = layer(x)
-			#pdb.set_trace()
-			z = np.asarray(reduceinfo(dgm[0]))
-			f = np.asarray(reduceinfo(dgm[1]))
-			savepersistence(z,f,fignum,output_images_dir)
+		self.graph_dump(output_images_dir)
 
 
 	def samples_plot(self):
@@ -322,6 +303,10 @@ class GNG():
 		pl.savefig("samples_intel.png")
 		pl.clf()
 		pl.close("samples_out")
+
+	def graph_dump(self, output_images_dir):
+		with open('./'+ output_images_dir+ '/graph_.pickle', 'wb') as handle:
+	  		pickle.dump(self.graph, handle)
 
 	def train(self, max_iterations=10000, output_images_dir='images_intelmap'):
 		"""."""
@@ -336,7 +321,7 @@ class GNG():
 		for i in xrange(1, max_iterations):
 			print("Iterating..{0:d}/{1}".format(i, max_iterations))
 			#pdb.set_trace()
-			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=200, p=self.data['yq'])]
+			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=600, p=self.data['yq'])]
 			self.samples.extend(iter_list)
 			#pdb.set_trace()
 			for x in iter_list:
@@ -398,10 +383,10 @@ class GNG():
 		self.samples_plot()
 
 
-def main():
+def main(map_type):
 	"""."""
 	global pos, G
-	G = read_file_hilbert_maps(map_="intel")
+	G = read_file_hilbert_maps(map_=map_type)
 	#pdb.set_trace()
 	inList = []
 	for key, value in iteritems(pos):
@@ -432,10 +417,12 @@ def convert_images_to_gif(output_images_dir, output_gif):
 
 if __name__ == "__main__":
 	#pdb.set_trace()
-	data = main()
+	map_type = "intel"
+	data = main(map_type)
 	grng = GNG(data)
-	output_images_dir = 'gng_template'
-	output_gif = "gng_template.gif"
+	output_images_dir = 'ph_gng_intel_template'
+	output_gif = "gng_intel_template.gif"
+
 	if grng is not None:
-		grng.train(max_iterations=10000, output_images_dir=output_images_dir)
+		grng.train(max_iterations=5000, output_images_dir=output_images_dir)
 		convert_images_to_gif(output_images_dir, output_gif)
