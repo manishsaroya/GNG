@@ -11,69 +11,15 @@ import glob
 from past.builtins import xrange
 from future.utils import iteritems
 import pickle
-import matplotlib.pyplot as plt
 import copy
 import re
 import numpy
 import sys
-import time
-
 pos = None
 G = None
 map_image = None
 numpy.set_printoptions(threshold=sys.maxsize)
-
-
-def reduceinfo(info):
-	r = []
-	for i in info:
-		if abs(i[0]) != np.inf and abs(i[1])!= np.inf and i[0]!=i[1]:
-			r.append(i.detach().numpy())
-	return r
-
-def savepersistence(z,f,fignum, output_images_dir):
-	########### save persistence Diagram #######
-	#pdb.set_trace()
-	fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6,6))
-	ax.set(xlim=(-0.1, 3.1), ylim=(-0.1, 3.1))
-	x1, y1 = [-0.2, 10], [-0.2, 10]
-	ax.plot(x1, y1, marker = 'o')
-
-	if len(z)>0:
-		ax.plot(z[:,0], z[:,1],'bo', label="zero homology")
-	if len(f)>0:
-		ax.plot(f[:,0], f[:,1],'ro',label="first homology")
-	ax.set_title("output PersistenceDgm intel map")
-	ax.set_xlabel('Birth')
-	ax.set_ylabel('Death')
-	ax.legend()
-	#pl.axis('equal')
-	t = time.time()
-	plt.savefig(output_images_dir+'/persistence_dgm'+str(fignum)+'.png')
-
-
-def read_pgm(filename, byteorder='>'):
-	"""Return image data from a raw PGM file as numpy array.
-
-	Format specification: http://netpbm.sourceforge.net/doc/pgm.html
-
-	"""
-	with open(filename, 'rb') as f:
-		buffer = f.read()
-	try:
-		header, width, height, maxval = re.search(
-			b"(^P5\s(?:\s*#.*[\r\n])*"
-			b"(\d+)\s(?:\s*#.*[\r\n])*"
-			b"(\d+)\s(?:\s*#.*[\r\n])*"
-			b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
-	except AttributeError:
-		raise ValueError("Not a raw PGM file: '%s'" % filename)
-	return numpy.frombuffer(buffer,
-							dtype='u1' if int(maxval) < 256 else byteorder+'u2',
-							count=int(width)*int(height),
-							offset=len(header)
-							).reshape((int(height), int(width)))
-
+import pdb
 
 def read_file_hilbert_maps(map_ ='intel'):
 	"""Create the graph and returns the networkx version of it 'G'."""
@@ -81,8 +27,8 @@ def read_file_hilbert_maps(map_ ='intel'):
 	global G
 	global map_image
 
-	if map_=='intel':
-		with open('./dataset/mapdata_{}.pickle'.format(68),'rb') as tf:
+	if map_ == 'intel':
+		with open('./dataset/mapdata_{}.pickle'.format(271),'rb') as tf:
 			mapdata = pickle.load(tf)
 		# convert to numpy 
 		mapdata['Xq'] = mapdata['X']
@@ -93,9 +39,6 @@ def read_file_hilbert_maps(map_ ='intel'):
 			mapdata_ = pickle.load(tf)
 			mapdata['Xq'] = mapdata_['Xq'].numpy()
 			mapdata['yq'] = mapdata_['yq'].numpy()
-		#dictionary.get("bogus")
-		#['Xq'] = []
-		#mapdata['yq'] = []
 		for i in range(1,4):
 			with open('./dataset/mapdata_{}.pickle'.format(i),'rb') as tf:
 				mapdata_ = pickle.load(tf)
@@ -121,9 +64,7 @@ def read_file_hilbert_maps(map_ ='intel'):
 	#		map_image['yq'].append(map_array[i][j])
 	#map_image['Xq'] = np.array(map_image['Xq'])
 	#map_image['yq'] = np.array(map_image['yq'])
-	
-	#pdb.set_trace()
-	#pdb.set_trace()
+
 	G = nx.Graph()
 
 	pos = nx.get_node_attributes(G, 'pos')
@@ -134,14 +75,12 @@ class GNG():
 	"""."""
 
 	def __init__(self, data, eps_b=0.05, eps_n=0.0005, max_age=30,
-				 lambda_=100, alpha=0.5, d=0.0005, max_nodes=100):
+				 lambda_=10, alpha=0.5, d=0.0005, max_nodes=100):
 		"""."""
 		self.graph = nx.Graph()
 		self.data = data
-		#pdb.set_trace()
 		# toggle the probabilities
 		self.data['yq'] = np.ones(len(self.data['yq'])) - self.data['yq']
-		#pdb.set_trace()
 		self.data['yq'] = np.exp(10*self.data['yq'])
 		# normalize the probabilities
 		self.data['yq'] /= np.linalg.norm(self.data['yq'], ord=1)
@@ -155,15 +94,9 @@ class GNG():
 		self.num_of_input_signals = 0
 
 		self.pos = None
-		#pdb.set_trace()
 		print(np.random.choice(len(data['Xq']), p=data['yq']))
-		#pdb.set_trace()
-		#node1 = data[np.random.randint(0, len(data))]
-		#node2 = data[np.random.randint(0, len(data))]
-
 		node1 = self.data['Xq'][np.random.choice(len(self.data['Xq']), p=self.data['yq'])]
 		node2 = self.data['Xq'][np.random.choice(len(self.data['Xq']), p=self.data['yq'])]
-		#pdb.set_trace()
 		# make sure you dont select same positions
 		if node1[0] == node2[0] and node1[1] == node2[1]:
 			print("Rerun ---------------> similar nodes selected")
@@ -187,7 +120,6 @@ class GNG():
 		for node, position in iteritems(self.pos):
 			dist = self.distance(curnode, position)
 			templist.append([node, dist])
-		#pdb.set_trace()
 		distlist = np.array(templist)
 
 		ind = np.lexsort((distlist[:, 0], distlist[:, 1]))
@@ -208,6 +140,20 @@ class GNG():
 		newpos = [neighborpos[0] + movement[0], neighborpos[1] + movement[1]]
 
 		return newpos
+
+	def is_outlier_edge(self, test_edge):
+		self.pos = nx.get_node_attributes(self.graph, 'pos')
+		test_length = self.distance(self.pos[test_edge[0]], self.pos[test_edge[1]])
+		all_edge_lengths = []
+		for edge in self.graph.edges():
+			all_edge_lengths.append(self.distance(self.pos[edge[0]], self.pos[edge[1]]))
+		edge_mean, edge_std = np.mean(all_edge_lengths), np.std(all_edge_lengths),
+		cut_off = edge_std * 2
+		lower, upper = edge_mean - cut_off, edge_mean + cut_off
+		#pdb.set_trace()
+		bool_ = test_length < lower or test_length > upper
+		return bool_
+
 
 	def update_winner(self, curnode):
 		"""."""
@@ -232,7 +178,6 @@ class GNG():
 		# now update all the neighbors distances and their ages
 		neighbors = nx.all_neighbors(self.graph, winnernode)
 		age_of_edges = nx.get_edge_attributes(self.graph, 'age')
-		#pdb.set_trace()
 		for n in neighbors:
 			newposition = self.get_new_position_neighbors(self.pos[n], curnode)
 			self.graph.add_node(n, pos=newposition)
@@ -255,9 +200,9 @@ class GNG():
 		age_of_edges = nx.get_edge_attributes(self.graph, 'age')
 		for edge, age in iteritems(age_of_edges):
 
-			if age > self.max_age:
+			if age > self.max_age:  # self.is_outlier_edge(edge)
+				#pdb.set_trace()
 				self.graph.remove_edge(edge[0], edge[1])
-
 				# if it causes isolated vertix, remove that vertex as well
 
 				for node in self.graph.nodes():
@@ -306,7 +251,7 @@ class GNG():
 
 	def graph_dump(self, output_images_dir):
 		with open('./'+ output_images_dir+ '/graph_.pickle', 'wb') as handle:
-	  		pickle.dump(self.graph, handle)
+			pickle.dump(self.graph, handle)
 
 	def train(self, max_iterations=10000, output_images_dir='images_intelmap'):
 		"""."""
@@ -320,10 +265,8 @@ class GNG():
 		self.samples = []
 		for i in xrange(1, max_iterations):
 			print("Iterating..{0:d}/{1}".format(i, max_iterations))
-			#pdb.set_trace()
 			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=600, p=self.data['yq'])]
 			self.samples.extend(iter_list)
-			#pdb.set_trace()
 			for x in iter_list:
 				self.update_winner(x)
 
@@ -372,7 +315,8 @@ class GNG():
 					self.graph.add_node(newnode, error=error_max_node)
 
 					fignum += 1
-					self.save_img(fignum, output_images_dir)
+					if i % 100==0:
+						self.save_img(fignum, output_images_dir)
 
 				# step 9: Decrease all error variables
 				errorvectors = nx.get_node_attributes(self.graph, 'error')
@@ -387,7 +331,6 @@ def main(map_type):
 	"""."""
 	global pos, G
 	G = read_file_hilbert_maps(map_=map_type)
-	#pdb.set_trace()
 	inList = []
 	for key, value in iteritems(pos):
 		inList.append([value[0], value[1]])
@@ -420,8 +363,8 @@ if __name__ == "__main__":
 	map_type = "intel"
 	data = main(map_type)
 	grng = GNG(data)
-	output_images_dir = 'ph_gng_intel_template'
-	output_gif = "gng_intel_template.gif"
+	output_images_dir = 'ph_gng_intel_271dense_template'
+	output_gif = "gng_intel_271_template.gif"
 
 	if grng is not None:
 		grng.train(max_iterations=5000, output_images_dir=output_images_dir)
