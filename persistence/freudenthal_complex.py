@@ -74,5 +74,5 @@ class FreudenthalComplex:
                 st.insert([ind, ind + width, ind + width + 1], self.max_value([ind, ind + width, ind + width + 1]))
                 count += 1
             # pdb.set_trace()
-        print(count, "counts")
+        print(count, "Simplex counts")
         return st

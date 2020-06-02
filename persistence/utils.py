@@ -16,7 +16,9 @@ def load_hilbert_map(map_type='intel'):
     """
     mapdata = {}
     my_map = map_type
+    resolution = None
     if my_map == "drive":
+        resolution = 0.5
         with open('./../dataset/mapdata_{}.pickle'.format(0), 'rb') as tf:
             mapdata_ = pickle.load(tf)
             mapdata['Xq'] = mapdata_['Xq'].numpy()
@@ -27,13 +29,14 @@ def load_hilbert_map(map_type='intel'):
                 mapdata['Xq'] = np.concatenate((mapdata.get('Xq'), mapdata_['Xq'].numpy()), axis=0)
                 mapdata['yq'] = np.concatenate((mapdata.get('yq'), mapdata_['yq'].numpy()), axis=0)
     else:
+        resolution = 0.3
         with open('./../dataset/mapdata_{}.pickle'.format(271), 'rb') as tf:
             mapdata = pickle.load(tf)
         # convert to numpy
         mapdata['Xq'] = mapdata['X']
         mapdata['yq'] = mapdata['Y']
         #pdb.set_trace()
-    return mapdata
+    return mapdata, resolution
 
 
 def load_graph(path):
@@ -46,13 +49,13 @@ def load_graph(path):
     return g
 
 
-def convert_map_dict_to_array(map_dict):
+def convert_map_dict_to_array(map_dict, resolution):
     """
     :param map_dict: a dictionary with key 'Xq' as locations and key 'yq' as occupancy probabilities
     :return: hilbert map in array form
     Note: Hard code for resolution 0.5 and map (-80,80)
     """
-    resolution = 0.3
+    #resolution = 0.3
     map_array = np.zeros([320, 320]) + 0.5
     for indx, point in enumerate(map_dict['Xq']):
         map_array[int(point[0] * (1/resolution) + 160)][int(point[1] * (1/resolution) + 160)] = map_dict['yq'][indx]
