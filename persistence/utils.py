@@ -30,7 +30,7 @@ def load_hilbert_map(map_type='intel'):
                 mapdata['yq'] = np.concatenate((mapdata.get('yq'), mapdata_['yq'].numpy()), axis=0)
     else:
         resolution = 0.3
-        with open('./../dataset/mapdata_{}.pickle'.format(271), 'rb') as tf:
+        with open('./../dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
             mapdata = pickle.load(tf)
         # convert to numpy
         mapdata['Xq'] = mapdata['X']
@@ -67,18 +67,18 @@ def create_intensity_graph(_graph, graph_type):
     :param _graph: networkx graph
     :return: Add intensity value to every node from the hilbert_map and return the graph
     """
-    map_dict = load_hilbert_map(graph_type)
-    map_array = convert_map_dict_to_array(map_dict)
+    map_dict, resolution = load_hilbert_map(graph_type)
+    map_array = convert_map_dict_to_array(map_dict, resolution)
 
     # assign intensities to graph based on the map array
     position = nx.get_node_attributes(_graph, "pos")
     # make attribute dictionary
     intensity = {}
-    resolution = 0.3
+    # resolution = 0.3
     for i in range(_graph.number_of_nodes()):
         intensity[i] = map_array[int(position[i][0]*(1/resolution)) + 160, int(position[i][1]*(1/resolution)) + 160]  # approx interpolation
     nx.set_node_attributes(_graph, intensity, "intensity")
-    return _graph
+    return _graph, map_dict
 
 
 def create_simplex_from_graph(G):

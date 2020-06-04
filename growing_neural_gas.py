@@ -15,6 +15,9 @@ import copy
 import re
 import numpy
 import sys
+from persistence.utils import convert_map_dict_to_array, print_complex_attributes  # load_hilbert_map,
+import pdb
+
 pos = None
 G = None
 map_image = None
@@ -28,7 +31,7 @@ def read_file_hilbert_maps(map_ ='intel'):
 	global map_image
 
 	if map_ == 'intel':
-		with open('./dataset/mapdata_{}.pickle'.format(271),'rb') as tf:
+		with open('./dataset/mapdata_{}.pickle'.format(908),'rb') as tf:
 			mapdata = pickle.load(tf)
 		# convert to numpy 
 		mapdata['Xq'] = mapdata['X']
@@ -70,15 +73,18 @@ def read_file_hilbert_maps(map_ ='intel'):
 	pos = nx.get_node_attributes(G, 'pos')
 	return G
 
+def get_top_n_persistence()
 
 class GNG():
 	"""."""
 
 	def __init__(self, data, eps_b=0.05, eps_n=0.0005, max_age=30,
-				 lambda_=10, alpha=0.5, d=0.0005, max_nodes=100):
+				 lambda_=10, alpha=0.5, d=0.0005, max_nodes=500):
 		"""."""
 		self.graph = nx.Graph()
 		self.data = data
+		# get persistence of the maps
+		self.persistence = get_top_n_persistence(data.copy(), )
 		# toggle the probabilities
 		self.data['yq'] = np.ones(len(self.data['yq'])) - self.data['yq']
 		self.data['yq'] = np.exp(10*self.data['yq'])
@@ -229,15 +235,16 @@ class GNG():
 		#nx.draw(G, pos, node_color='#ffffff', with_labels=False, node_size=100, alpha=1.0, width=1.5)
 		position = nx.get_node_attributes(self.graph, 'pos')
 		nx.draw(self.graph, position, node_color='r', node_size=25, with_labels=False, edge_color='g', width=2.0)
-		ages_ = nx.get_edge_attributes(self.graph,'age')
+		# Dont write edge ages
+		#ages_ = nx.get_edge_attributes(self.graph,'age')
 		#pdb.set_trace()
-		nx.draw_networkx_edge_labels(self.graph,position,edge_labels=ages_, font_size=7)
+		#nx.draw_networkx_edge_labels(self.graph,position,edge_labels=ages_, font_size=7)
 		pl.title('Growing Neural Gas')
 		pl.savefig("{0}/{1}.png".format(output_images_dir, str(fignum)))
 
 		pl.clf()
 		pl.close(fignum)
-		self.graph_dump(output_images_dir)
+		self.graph_dump(output_images_dir,fignum)
 
 
 	def samples_plot(self):
@@ -249,8 +256,8 @@ class GNG():
 		pl.clf()
 		pl.close("samples_out")
 
-	def graph_dump(self, output_images_dir):
-		with open('./'+ output_images_dir+ '/graph_.pickle', 'wb') as handle:
+	def graph_dump(self, output_images_dir,fignum):
+		with open('./'+ output_images_dir+ '/graph_{}.pickle'.format(fignum), 'wb') as handle:
 			pickle.dump(self.graph, handle)
 
 	def train(self, max_iterations=10000, output_images_dir='images_intelmap'):
@@ -266,7 +273,11 @@ class GNG():
 		for i in xrange(1, max_iterations):
 			print("Iterating..{0:d}/{1}".format(i, max_iterations))
 			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=600, p=self.data['yq'])]
-			self.samples.extend(iter_list)
+
+			# when i == 200 do the process for next 100 iterations using biased sampling.
+			if 200 < i and i < 300:
+				get
+			#self.samples.extend(iter_list)
 			for x in iter_list:
 				self.update_winner(x)
 
@@ -314,9 +325,10 @@ class GNG():
 					# initialize the error variable of newnode with max_node
 					self.graph.add_node(newnode, error=error_max_node)
 
-					fignum += 1
-					if i % 100==0:
-						self.save_img(fignum, output_images_dir)
+
+					if i % (20)==0:
+						fignum += 1
+						self.save_img(i, output_images_dir)
 
 				# step 9: Decrease all error variables
 				errorvectors = nx.get_node_attributes(self.graph, 'error')
@@ -324,7 +336,7 @@ class GNG():
 					olderror = errorvectors[i]
 					newerror = olderror - self.d * olderror
 					self.graph.add_node(i, error=newerror)
-		self.samples_plot()
+		#self.samples_plot()
 
 
 def main(map_type):
@@ -363,9 +375,9 @@ if __name__ == "__main__":
 	map_type = "intel"
 	data = main(map_type)
 	grng = GNG(data)
-	output_images_dir = 'ph_gng_intel_271dense_template'
-	output_gif = "gng_intel_271_template.gif"
+	output_images_dir = '908test'
+	output_gif = "_908_test.gif"
 
 	if grng is not None:
-		grng.train(max_iterations=5000, output_images_dir=output_images_dir)
-		convert_images_to_gif(output_images_dir, output_gif)
+		grng.train(max_iterations=200, output_images_dir=output_images_dir)
+		#convert_images_to_gif(output_images_dir, output_gif)

@@ -18,6 +18,39 @@ def process_persistence(persist):
             persistence.append(p)
     return persistence
 
+def get_top_n_persistence(n, map_type):
+    map_data, resolution = load_hilbert_map(map_type="intel")
+    map_array = convert_map_dict_to_array(map_data, resolution)
+
+    fc = FreudenthalComplex(map_array)
+    st = fc.init_freudenthal_2d()
+    print_complex_attributes(st)
+
+    if st.make_filtration_non_decreasing():
+        print("modified filtration value")
+    st.initialize_filtration()
+    if len(st.persistence()) <= 10:
+        for i in st.persistence():
+            print(i)
+
+    first_persistence = st.persistence_intervals_in_dimension(1)
+    life_span = first_persistence[:,1] - first_persistence[:,0]
+    winner_index = life_span.argsort()[-n:][::-1]
+    print("len winner index ", len(winner_index))
+    #print(life_span)
+    winner_persistence = first_persistence[winner_index]
+    print(winner_persistence, "winner_persistence")
+    top_persistence_node = []
+    for indx, intensity in enumerate(map_data['yq']):
+        for j in range(n):
+            p = winner_persistence[j]
+            # if np.isclose(intensity, p[1]):
+            #     top_persistence_node.append(map_data["Xq"][indx])
+            if np.isclose(intensity, p[0]):
+                top_persistence_node.append(map_data["Xq"][indx])
+                print(j, intensity)
+    return top_persistence_node
+
 
 if __name__ == "__main__":
     map_data, resolution = load_hilbert_map(map_type="intel")
@@ -35,34 +68,29 @@ if __name__ == "__main__":
         for i in st.persistence():
             print(i)
     #graph_persistence = st.persistence()
-    print(st.persistence_intervals_in_dimension(1))
-    persistence = process_persistence(st.persistence())
-    #gudhi.plot_persistence_diagram(persistence, alpha=0.8, legend=True)
-    # find the most relevant persistent in the dictionary
-    # Plot top 10 persistence values
-    persistence_weightage = []
-    persistence_index = []
-    for index, value in enumerate(persistence):
-        if value[0]==1:
-            persistence
-
+    #print(st.persistence_intervals_in_dimension(1))
+    #persistence = process_persistence(st.persistence())
+    gudhi.plot_persistence_diagram(st.persistence(), alpha=0.8, legend=True)
+    plt.show()
+    first_persistence = st.persistence_intervals_in_dimension(1)
+    life_span = first_persistence[:,1] - first_persistence[:,0]
+    winner_index = life_span.argsort()[-20:][::-1]
+    #print(life_span)
+    winner_persistence = first_persistence[winner_index]
 
     pose = None
+    plt.figure(figsize=(8, 8))
     for indx, intensity in enumerate(map_data['yq']):
-        for j in range(5):
-            print(j)
-            p = persistence[j]
-            if p[0] == 1:
-                if np.isclose(intensity, p[1][1]):
-                    pose = map_data["Xq"][indx]
-                    plt.plot(pose[0], pose[1], "r*", markersize=12)
-                if np.isclose(intensity, p[1][0]):
-                    pose = map_data["Xq"][indx]
-                    plt.plot(pose[0], pose[1], "bo", markersize=10)
-    plt.scatter(map_data["Xq"][:,0],map_data["Xq"][:,1],c=map_data["yq"])
+        for j in range(3):
+            p = winner_persistence[j]
+            if np.isclose(intensity, p[1]):
+                pose = map_data["Xq"][indx]
+                plt.plot(pose[0], pose[1], "wo", markersize=10)
+            if np.isclose(intensity, p[0],rtol=1e-08):
+                pose = map_data["Xq"][indx]
+                plt.plot(pose[0], pose[1], "y*", markersize=20)
+    plt.scatter(map_data["Xq"][:, 0], map_data["Xq"][:, 1], c=map_data["yq"],cmap="jet")
     plt.colorbar()
     plt.show()
-    #map_array[int(point[0] * (1/resolution) + 160)][int(point[1] * (1/resolution) + 160)] = map_dict['yq'][indx]
-    #return map_array
-    #plt.plot(np.where(map_array == persistence[0][1][1]))
-    #plt.show()
+    print("printing top *", get_top_n_persistence(3, "intel"))
+
