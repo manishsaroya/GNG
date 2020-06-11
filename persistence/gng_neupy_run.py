@@ -14,27 +14,8 @@ import argparse
 import datetime
 import pickle
 
-# def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
-#     return algorithms.GrowingNeuralGas(
-#         n_inputs=2,
-#         n_start_nodes=n_start_nodes,
-#
-#         shuffle_data=True,
-#         verbose=True,
-#
-#         step=step,
-#         neighbour_step=0.005,
-#
-#         max_edge_age=max_edge_age,
-#         max_nodes=max_nodes,
-#
-#         n_iter_before_neuron_added=100,
-#         after_split_error_decay_rate=0.5,
-#         error_decay_rate=0.995,
-#         min_distance_for_update=0.01,
-#     )
 
-def create_gng(max_nodes, step=0.05, n_start_nodes=2, max_edge_age=30):
+def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
     return algorithms.GrowingNeuralGas(
         n_inputs=2,
         n_start_nodes=n_start_nodes,
@@ -43,16 +24,36 @@ def create_gng(max_nodes, step=0.05, n_start_nodes=2, max_edge_age=30):
         verbose=True,
 
         step=step,
-        neighbour_step=0.0005,
+        neighbour_step=0.005,
 
         max_edge_age=max_edge_age,
-        max_nodes=500,
+        max_nodes=max_nodes,
 
-        n_iter_before_neuron_added=10,
+        n_iter_before_neuron_added=100,
         after_split_error_decay_rate=0.5,
-        error_decay_rate=0.9995,
+        error_decay_rate=0.995,
         min_distance_for_update=0.01,
     )
+
+# def create_gng(max_nodes, step=0.05, n_start_nodes=2, max_edge_age=30):
+#     return algorithms.GrowingNeuralGas(
+#         n_inputs=2,
+#         n_start_nodes=n_start_nodes,
+#
+#         shuffle_data=True,
+#         verbose=True,
+#
+#         step=step,
+#         neighbour_step=0.0005,
+#
+#         max_edge_age=max_edge_age,
+#         max_nodes=500,
+#
+#         n_iter_before_neuron_added=10,
+#         after_split_error_decay_rate=0.5,
+#         error_decay_rate=0.9995,
+#         min_distance_for_update=0.01,
+#     )
 
 
 def draw_image(data, graph, dir, fignum, persistence_birthnode=None, samples=None, show=True):
@@ -65,7 +66,7 @@ def draw_image(data, graph, dir, fignum, persistence_birthnode=None, samples=Non
 		plt.setp(line, linewidth=2, color='lightsteelblue')
 
 	if samples is not None:
-		plt.scatter(np.array(samples)[:, 0], np.array(samples)[:, 1], marker='v', facecolors='r')
+		plt.scatter(np.array(samples)[:, 0], np.array(samples)[:, 1], marker='v', facecolors='cyan')
 
 	if persistence_birthnode is not None:
 		for i in range(len(persistence_birthnode)):
@@ -102,12 +103,14 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor',type=int, default=30)
-	parser.add_argument('--max_epoch', type=int, default=500)
+	parser.add_argument('--max_edge_age', type=int, default=20)
+	parser.add_argument('--max_epoch', type=int, default=200)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	args = parser.parse_args()
 
 	args.log_dir = './output/exp_factor-' + str(args.exp_factor) + "-max_epoch-" +\
-				   str(args.max_epoch) + "-date-" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '/'
+				   str(args.max_epoch) + "-max_edge_age-"+ str(args.max_edge_age)+"-date-" +\
+				   datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '/'
 
 	if not os.path.exists(args.log_dir):
 		os.makedirs(args.log_dir)
@@ -121,7 +124,7 @@ if __name__ == "__main__":
 
 	# GNG learning code
 	utils.reproducible()
-	gng = create_gng(2000)
+	gng = create_gng(2000, max_edge_age=args.max_edge_age)
 	all_samples = []
 	train_error_mean = []
 	train_error_std = []
@@ -143,7 +146,7 @@ if __name__ == "__main__":
 	all_samples = []
 	# correction epochs
 	for epoch in range(len(persistence_birth_nodes)):
-		sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=1000)
+		sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=600)
 		all_samples.extend(sample_list)
 		gng.train(sample_list, epochs=1)
 		train_error_mean.append(np.mean(gng.errors.train))
