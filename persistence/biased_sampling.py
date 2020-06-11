@@ -6,7 +6,7 @@ Contact: saroyam@oregonstate.edu
 import scipy.stats as st
 import numpy as np
 from scipy.stats import multivariate_normal
-from utils import load_hilbert_map, convert_map_dict_to_array
+from persistence.utils import load_hilbert_map, convert_map_dict_to_array
 import matplotlib.pyplot as plt
 
 # from scipy.stats import multivariate_normal
@@ -25,13 +25,14 @@ import matplotlib.pyplot as plt
 
 #def g(x):
 
-def samples_plot(samples):
+def samples_plot(samples, show=False):
 	fig = plt.figure("samples_out", figsize=(8, 8))
 	ax = fig.add_subplot(111)
 	plt.xlim(-80,80)
 	plt.ylim(-80,80)
 	plt.scatter(np.array(samples)[:, 0], np.array(samples)[:, 1], facecolors='r')
-	plt.show()
+	if show:
+		plt.show()
 	#pl.savefig("samples_intel.png")
 	#pl.clf()
 	#pl.close("samples_out")
@@ -51,7 +52,7 @@ def get_samples(map_data, pose, scale=1, num_samples=600):
 
 	map_data['yq'] = np.ones(len(map_data['yq'])) - map_data['yq']
 
-	map_data['yq'] = np.exp(20 * map_data['yq'])
+	map_data['yq'] = np.exp(30 * map_data['yq'])
 
 	for index in range(len(map_data["yq"])):
 		map_data["yq"][index] *= rv.pdf(map_data["Xq"][index])

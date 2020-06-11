@@ -31,6 +31,7 @@ def load_hilbert_map(map_type='intel'):
     else:
         resolution = 0.3
         with open('./../dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
+        #with open('./dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
             mapdata = pickle.load(tf)
         # convert to numpy
         mapdata['Xq'] = mapdata['X']

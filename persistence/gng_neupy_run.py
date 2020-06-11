@@ -3,8 +3,9 @@ Author: Manish Saroya
 Contact: saroyam@oregonstate.edu
 """
 # get the map
-from persistence.biased_sampling import get_samples
+from persistence.biased_sampling import get_samples, samples_plot
 from persistence.utils import load_hilbert_map
+from persistence.drive_hilbert_persistence import get_top_n_persistence_birthnode
 import numpy as np
 from neupy import algorithms, utils
 import matplotlib.pyplot as plt
@@ -13,7 +14,27 @@ import argparse
 import datetime
 import pickle
 
-def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
+# def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
+#     return algorithms.GrowingNeuralGas(
+#         n_inputs=2,
+#         n_start_nodes=n_start_nodes,
+#
+#         shuffle_data=True,
+#         verbose=True,
+#
+#         step=step,
+#         neighbour_step=0.005,
+#
+#         max_edge_age=max_edge_age,
+#         max_nodes=max_nodes,
+#
+#         n_iter_before_neuron_added=100,
+#         after_split_error_decay_rate=0.5,
+#         error_decay_rate=0.995,
+#         min_distance_for_update=0.01,
+#     )
+
+def create_gng(max_nodes, step=0.05, n_start_nodes=2, max_edge_age=30):
     return algorithms.GrowingNeuralGas(
         n_inputs=2,
         n_start_nodes=n_start_nodes,
@@ -22,33 +43,39 @@ def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
         verbose=True,
 
         step=step,
-        neighbour_step=0.005,
+        neighbour_step=0.0005,
 
         max_edge_age=max_edge_age,
-        max_nodes=max_nodes,
+        max_nodes=500,
 
-        n_iter_before_neuron_added=100,
+        n_iter_before_neuron_added=10,
         after_split_error_decay_rate=0.5,
-        error_decay_rate=0.995,
+        error_decay_rate=0.9995,
         min_distance_for_update=0.01,
     )
 
 
-def draw_image(data, graph, dir, fignum, show=True):
-	plt.figure(figsize=(15, 15))
-	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap='jet', s=100, vmin=0, vmax=1, edgecolors='')
+def draw_image(data, graph, dir, fignum, persistence_birthnode=None, samples=None, show=True):
+	fig = plt.figure(figsize=(15, 15))
+	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap='jet', s=70, vmin=0, vmax=1, edgecolors='')
 	plt.colorbar()
 	for node_1, node_2 in graph.edges:
 		weights = np.concatenate([node_1.weight, node_2.weight])
 		line, = plt.plot(*weights.T, color='lightsteelblue')
 		plt.setp(line, linewidth=2, color='lightsteelblue')
 
-	plt.xticks([], [])
-	plt.yticks([], [])
+	if samples is not None:
+		plt.scatter(np.array(samples)[:, 0], np.array(samples)[:, 1], marker='v', facecolors='r')
+
+	if persistence_birthnode is not None:
+		for i in range(len(persistence_birthnode)):
+			plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "y*", markersize=20)
 
 	if show:
 		plt.savefig(dir + "graph{}.eps".format(fignum))
 		#plt.show()
+
+
 
 def normalize(data, exp_factor=20):
 	# toggle the probabilities
@@ -74,7 +101,7 @@ def plot_loss(train_error_mean, train_error_std, dir):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
-	parser.add_argument('--exp_factor',type=int, default=20)
+	parser.add_argument('--exp_factor',type=int, default=30)
 	parser.add_argument('--max_epoch', type=int, default=500)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	args = parser.parse_args()
@@ -86,23 +113,59 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	data, resolution = load_hilbert_map(map_type="intel")
+	persistence_birth_nodes = get_top_n_persistence_birthnode(10, "intel")
+	#iter_list = get_samples(data.copy(), persistence[2], scale=2, num_samples=600)
+	# samples_plot(samples)
 	original_data = data.copy()
 	data = normalize(data, args.exp_factor)
 
 	# GNG learning code
 	utils.reproducible()
 	gng = create_gng(2000)
-
+	all_samples = []
 	train_error_mean = []
 	train_error_std = []
 	for epoch in range(args.max_epoch+1):
+		# if epoch / args.max_epoch >= 0.9:
+		# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch%10], scale=1.5, num_samples=600)
+		# else:
 		sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+		all_samples.extend(sample_list)
 		gng.train(sample_list, epochs=1)
 		train_error_mean.append(np.mean(gng.errors.train))
 		train_error_std.append(np.std(gng.errors.train))
 		if epoch % 100 == 0:
-			draw_image(original_data, gng.graph, args.log_dir, epoch, True)
+			draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes,\
+					   show=True)
 			with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
 				pickle.dump(gng, handle)
+
+	all_samples = []
+	# correction epochs
+	for epoch in range(len(persistence_birth_nodes)):
+		sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=1000)
+		all_samples.extend(sample_list)
+		gng.train(sample_list, epochs=1)
+		train_error_mean.append(np.mean(gng.errors.train))
+		train_error_std.append(np.std(gng.errors.train))
+
+		draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes,\
+				   samples=sample_list, show=True)
+		with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
+			pickle.dump(gng, handle)
+
 	plot_loss(train_error_mean,train_error_std, args.log_dir)
 
+# Garbage
+
+def draw_persistence(persistence_birthnode, show= False):
+	"""
+	:param persistence_birthnode:
+	:param show:
+	:return:
+	"""
+	# hard coded
+	for i in range(len(persistence_birthnode)):
+		plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "y*", markersize=20)
+	if show:
+		plt.show()

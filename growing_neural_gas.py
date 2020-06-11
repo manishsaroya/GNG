@@ -15,7 +15,9 @@ import copy
 import re
 import numpy
 import sys
-from persistence.utils import convert_map_dict_to_array, print_complex_attributes  # load_hilbert_map,
+from persistence.drive_hilbert_persistence import get_top_n_persistence
+from persistence.biased_sampling import get_samples
+#from persistence.utils import convert_map_dict_to_array, print_complex_attributes  # load_hilbert_map,
 import pdb
 
 pos = None
@@ -73,7 +75,6 @@ def read_file_hilbert_maps(map_ ='intel'):
 	pos = nx.get_node_attributes(G, 'pos')
 	return G
 
-def get_top_n_persistence()
 
 class GNG():
 	"""."""
@@ -84,7 +85,7 @@ class GNG():
 		self.graph = nx.Graph()
 		self.data = data
 		# get persistence of the maps
-		self.persistence = get_top_n_persistence(data.copy(), )
+		self.persistence = get_top_n_persistence(3, "intel")
 		# toggle the probabilities
 		self.data['yq'] = np.ones(len(self.data['yq'])) - self.data['yq']
 		self.data['yq'] = np.exp(10*self.data['yq'])
@@ -228,6 +229,7 @@ class GNG():
 		pl.scatter(map_image['Xq'][:, 0], map_image['Xq'][:, 1], c=map_image['yq'], cmap='jet', s=100, vmin=0, vmax=1, edgecolors='')
 		#pl.scatter(self.data['Xq'][:, 0], self.data['Xq'][:, 1], c=self.data['yq'], cmap='jet', s=2, vmin=0, vmax=(1/41269.54), edgecolors='')
 		pl.colorbar()
+		pl.plot(self.persistence[2][0], self.persistence[2][1], "y*", markersize=20)
 		#pl.xlim([-40,40]); pl.ylim([-40,40])
 		#pl.imshow(map_image, pl.cm.gray)
 		# Dont draw G 
@@ -244,7 +246,7 @@ class GNG():
 
 		pl.clf()
 		pl.close(fignum)
-		self.graph_dump(output_images_dir,fignum)
+		#self.graph_dump(output_images_dir,fignum)
 
 
 	def samples_plot(self):
@@ -275,8 +277,8 @@ class GNG():
 			iter_list = self.data['Xq'][np.random.choice(len(self.data['Xq']), size=600, p=self.data['yq'])]
 
 			# when i == 200 do the process for next 100 iterations using biased sampling.
-			if 200 < i and i < 300:
-				get
+			if (i >125 and i<150) or (i>225 and i<250) or (i > 325 and i< 350):
+				iter_list = get_samples(self.data.copy(),self.persistence[2],scale=2,num_samples=6000)
 			#self.samples.extend(iter_list)
 			for x in iter_list:
 				self.update_winner(x)
@@ -326,7 +328,7 @@ class GNG():
 					self.graph.add_node(newnode, error=error_max_node)
 
 
-					if i % (20)==0:
+					if i % (10)==0:
 						fignum += 1
 						self.save_img(i, output_images_dir)
 
@@ -379,5 +381,5 @@ if __name__ == "__main__":
 	output_gif = "_908_test.gif"
 
 	if grng is not None:
-		grng.train(max_iterations=200, output_images_dir=output_images_dir)
-		#convert_images_to_gif(output_images_dir, output_gif)
+		grng.train(max_iterations=300, output_images_dir=output_images_dir)
+		convert_images_to_gif(output_images_dir, output_gif)
