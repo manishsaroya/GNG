@@ -49,14 +49,21 @@ def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir
         line, = pl.plot(*weights.T, color='lightsteelblue')
         pl.setp(line, linewidth=2, color='lightsteelblue')
     pl.title('Test image')
+
     #if samples is not None:
-    pl.scatter(start_sample[0], start_sample[1], marker='v', facecolors='cyan')
-    pl.scatter(goal_sample[0], goal_sample[1], marker='*', facecolors='cyan')
-    pl.scatter(position[start][0], position[start][1], marker='^', facecolors='yellow')
-    pl.scatter(position[goal][0], position[goal][1], marker='*', facecolors='yellow')
+    pl.scatter(start_sample[0], start_sample[1],s=90, marker='v', facecolors='cyan')
+    pl.scatter(goal_sample[0], goal_sample[1],s=90, marker='*', facecolors='cyan')
+    pl.scatter(position[start][0], position[start][1], s=90, marker='v', facecolors='yellow')
+    pl.scatter(position[goal][0], position[goal][1], s=90, marker='*', facecolors='yellow')
 
     for path_n in path_nodes:
-        pl.scatter(position[path_n][0], position[path_n][1],s=90, marker='*', facecolors='white')
+        pl.scatter(position[path_n][0], position[path_n][1],s=40, marker='*', facecolors='red')
+
+    for i in range(len(path_nodes)-1):
+        weights = np.concatenate([[position[path_nodes[i]]], [position[path_nodes[i+1]]]])
+        line, = pl.plot(*weights.T, color='white')
+        pl.setp(line, linewidth=2, color='white')
+
 
     if save_data:
         pl.savefig(dir + "prm{}.eps".format(fig_num))
@@ -103,9 +110,6 @@ def convert_gng_to_nxgng(path,map_array, resolution):
     for indx, node in enumerate(g.graph.nodes):
         nodeid[node] = indx
         nxgraph.add_node(nodeid[node], pos=(node.weight[0][0], node.weight[0][1]))
-        #print(node)
-        #print(indx)
-        #print(node.weight)
     positions = nx.get_node_attributes(nxgraph, "pos")
     for node_1, node_2 in g.graph.edges:
         #collision_metric = collision_check(map_array, sample_list[node_adjacency_list[0]],
@@ -122,6 +126,7 @@ if __name__ =="__main__":
     map_data, resolution = load_hilbert_map(map_type="intel")
     map_array = convert_map_dict_to_array(map_data, resolution)
     # load graph
+    save_pickle = False
 
     gng_bool = False
     prm_bool = False
@@ -172,9 +177,9 @@ if __name__ =="__main__":
         # goal_loc = sample_list
         kl, prev, nodes_explored =calculate_distances(prm_graph,int(start_node[0]), int(goal_node[0]))
         path_exists = kl[goal_node[0]] != float('infinity')
+        path_nodes = []
         if path_exists:
             success_list.append(True)
-            path_nodes = []
             pointer = goal_node[0]
             path_nodes.append(int(goal_node[0]))
             while pointer!= start_node[0]:
@@ -186,11 +191,14 @@ if __name__ =="__main__":
             node_explored_list.append(nodes_explored)
             #print("path cost", kl[goal_node[0]] + start_node[1] + goal_node[1])
             distance_to_goal_list.append(kl[goal_node[0]] + start_node[1] + goal_node[1])
-            #save_img(map_data, prm_graph, start_loc[0], int(start_node[0]), goal_loc[0], int(goal_node[0]), path_nodes, "", fig_num=lamda_,save_graph=False)
         else:
             success_list.append(False)
             node_explored_list.append(None)
             distance_to_goal_list.append(None)
+        if lamda_ in [87]:  # ,96,102,104,105]:
+            print("saving ile")
+            save_img(map_data, prm_graph, start_loc[0], int(start_node[0]), goal_loc[0], int(goal_node[0]),
+                     path_nodes, "gng_top/", fig_num=lamda_, save_graph=False)
             #print("No path")
 
     print("##############")
@@ -198,16 +206,17 @@ if __name__ =="__main__":
     print("success_list:", success_list)
     print("nodes explored list",node_explored_list)
     print("distance to goal list", distance_to_goal_list)
-    if gng_bool:
-        with open("test_output/" + 'gng1208_200.pickle', 'wb') as handle:
-            pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
-    elif gng_top_bool:
-        with open("test_output/" + 'gngtop_1208_200.pickle', 'wb') as handle:
-            pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
-    elif prm_bool:
-        with open("test_output/" + 'prm1208.pickle', 'wb') as handle:
-            pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
-    elif prm_dense_bool:
-        with open("test_output/" + 'prmdense_2500.pickle', 'wb') as handle:
-            pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
+    if save_pickle:
+        if gng_bool:
+            with open("test_output/" + 'gng1208_200.pickle', 'wb') as handle:
+                pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
+        elif gng_top_bool:
+            with open("test_output/" + 'gngtop_1208_200.pickle', 'wb') as handle:
+                pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
+        elif prm_bool:
+            with open("test_output/" + 'prm1208.pickle', 'wb') as handle:
+                pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
+        elif prm_dense_bool:
+            with open("test_output/" + 'prmdense_2500.pickle', 'wb') as handle:
+                pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
 

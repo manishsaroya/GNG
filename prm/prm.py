@@ -14,7 +14,7 @@ import datetime
 import pickle
 
 
-def save_img(data, graph, dir):
+def save_img(data, graph, dir, save_data=True, save_graph=True):
 	"""
 	:param data: map data dictionary
 	:param graph: prm nx graph
@@ -31,9 +31,11 @@ def save_img(data, graph, dir):
 		line, = pl.plot(*weights.T, color='lightsteelblue')
 		pl.setp(line, linewidth=2, color='lightsteelblue')
 	pl.title('Test image')
-	pl.savefig(dir + "prm.png")
-	with open(dir + 'prm.pickle', 'wb') as handle:
-		pickle.dump(graph, handle)
+	if save_data:
+		pl.savefig(dir + "prm.png")
+	if save_graph:
+		with open(dir + 'prm.pickle', 'wb') as handle:
+			pickle.dump(graph, handle)
 
 
 def hilbert_samples(map_data, exp_factor, num_samples=600):
@@ -53,7 +55,7 @@ def hilbert_samples(map_data, exp_factor, num_samples=600):
 	return samples_list
 
 
-def collision_check(map_array, pos1, pos2, obstacle_threshold):
+def collision_check(map_array, pos1, pos2, obstacle_threshold, resolution):
 	"""
 	Collision checker function between pos1 and pose2 via bresenham pixel selection
 	:param map_array: map data in array form
@@ -75,9 +77,9 @@ def collision_check(map_array, pos1, pos2, obstacle_threshold):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--number_of_samples', type=int, default=10000)
-	parser.add_argument('--exp_factor', type=int, default=1)
-	parser.add_argument('--obstacle_threshold', type=float, default=0.8)
-	parser.add_argument('--max_nodes', type=int, default=2000)
+	parser.add_argument('--exp_factor', type=int, default=30)
+	parser.add_argument('--obstacle_threshold', type=float, default=0.4)
+	parser.add_argument('--max_nodes', type=int, default=2500)
 	parser.add_argument('--k_nearest', type=int, default=5)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
@@ -111,7 +113,7 @@ if __name__ == "__main__":
 		for column, other_node in enumerate(node_adjacency_list):
 			distance_metric = distances[row][column] < args.connection_radius
 			collision_metric = collision_check(map_array, sample_list[node_adjacency_list[0]],
-											   sample_list[other_node], args.obstacle_threshold)
+											   sample_list[other_node], args.obstacle_threshold, resolution)
 			validation_metric = node_adjacency_list[0] != other_node
 			if distance_metric and collision_metric and validation_metric:
 				prm_graph.add_edge(node_adjacency_list[0], other_node, distance=distances[row][column])
