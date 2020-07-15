@@ -35,25 +35,6 @@ def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
         min_distance_for_update=0.01,
     )
 
-# def create_gng(max_nodes, step=0.05, n_start_nodes=2, max_edge_age=30):
-#     return algorithms.GrowingNeuralGas(
-#         n_inputs=2,
-#         n_start_nodes=n_start_nodes,
-#
-#         shuffle_data=True,
-#         verbose=True,
-#
-#         step=step,
-#         neighbour_step=0.0005,
-#
-#         max_edge_age=max_edge_age,
-#         max_nodes=500,
-#
-#         n_iter_before_neuron_added=10,
-#         after_split_error_decay_rate=0.5,
-#         error_decay_rate=0.9995,
-#         min_distance_for_update=0.01,
-#     )
 
 
 def draw_image(data, graph, dir, fignum, persistence_birthnode=None, samples=None, show=True):
@@ -104,7 +85,7 @@ if __name__ == "__main__":
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor',type=int, default=30)
 	parser.add_argument('--max_edge_age', type=int, default=20)
-	parser.add_argument('--max_epoch', type=int, default=200)
+	parser.add_argument('--max_epoch', type=int, default=2000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	args = parser.parse_args()
 
@@ -124,7 +105,7 @@ if __name__ == "__main__":
 
 	# GNG learning code
 	utils.reproducible()
-	gng = create_gng(2000, max_edge_age=args.max_edge_age)
+	gng = create_gng(200, max_edge_age=args.max_edge_age)
 	all_samples = []
 	train_error_mean = []
 	train_error_std = []
@@ -132,7 +113,10 @@ if __name__ == "__main__":
 		# if epoch / args.max_epoch >= 0.9:
 		# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch%10], scale=1.5, num_samples=600)
 		# else:
-		sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+		if np.random.uniform(0,1) < 1.8:
+			sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+		else:
+			sample_list = get_samples(original_data.copy(), persistence_birth_nodes[np.random.randint(0, 10)], scale=1.5, num_samples=600)
 		all_samples.extend(sample_list)
 		gng.train(sample_list, epochs=1)
 		train_error_mean.append(np.mean(gng.errors.train))
@@ -143,19 +127,19 @@ if __name__ == "__main__":
 			with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
 				pickle.dump(gng, handle)
 
-	all_samples = []
-	# correction epochs
-	for epoch in range(len(persistence_birth_nodes)):
-		sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=600)
-		all_samples.extend(sample_list)
-		gng.train(sample_list, epochs=1)
-		train_error_mean.append(np.mean(gng.errors.train))
-		train_error_std.append(np.std(gng.errors.train))
-
-		draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes,\
-				   samples=sample_list, show=True)
-		with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
-			pickle.dump(gng, handle)
+	# all_samples = []
+	# # correction epochs
+	# for epoch in range(len(persistence_birth_nodes)):
+	# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=600)
+	# 	all_samples.extend(sample_list)
+	# 	gng.train(sample_list, epochs=1)
+	# 	train_error_mean.append(np.mean(gng.errors.train))
+	# 	train_error_std.append(np.std(gng.errors.train))
+	#
+	# 	draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes,\
+	# 			   samples=sample_list, show=True)
+	# 	with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
+	# 		pickle.dump(gng, handle)
 
 	plot_loss(train_error_mean,train_error_std, args.log_dir)
 
