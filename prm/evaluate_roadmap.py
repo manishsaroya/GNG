@@ -120,9 +120,9 @@ def convert_gng_to_nxgng(path,map_array, obs_threshold, resolution):
 if __name__ =="__main__":
     exp_factor = 30
     used_stored_samples = True
-    save_pickle = False
+    save_pickle = True
     test_list = [2,3,6]
-    obstacle_threshold = 0.45
+    obstacle_threshold = 0.4
 
     # TODO: Finalize map to be used as of now using new map
     # load map
@@ -133,8 +133,8 @@ if __name__ =="__main__":
     map_array = convert_map_dict_to_array(map_data, resolution)
     # load graph
 
-    # roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
-    roadmap_types = ["gng", "gng_top", "prm_dense"]
+    roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
+    # roadmap_types = ["gng_top", "gng"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/"}
     gng_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-06-21-01-27-07/" \
@@ -143,18 +143,18 @@ if __name__ =="__main__":
     # using birth node
     #gng_top_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-06-25-12-36-25/gng200.pickle"
     # using death node
-    gng_top_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-07-15-15-33-05/gng200.pickle"
+    gng_top_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-07-16-02-40-03/gng200.pickle"
     #prm_dense_path = "output/max_nodes-2500-k_nearest-5-connection_radius-5.0-date-2020-06-25-12-19-34/prm.pickle"
     prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-14-20-35-53/prm.pickle"
 
-    if used_stored_samples:
-        with open("test_samples/test_data.pickle", 'rb') as tf:
-            test_data = pickle.load(tf)
-        goal_list = test_data[0]
-        start_list = test_data[1]
-    else:
-        goal_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
-        start_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
+    #if used_stored_samples:
+    with open("test_samples/test_data.pickle", 'rb') as tf:
+        test_data = pickle.load(tf)
+    goal_list = test_data[0]
+    start_list = test_data[1]
+    # else:
+    #     goal_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
+    #     start_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
 
     #with open("test_samples/" + 'test_data.pickle', 'wb') as handle:
     #    pickle.dump([goal_list, start_list], handle)
@@ -169,7 +169,6 @@ if __name__ =="__main__":
             prm_graph = load_graph(prm_path)
         elif roadmap == "prm_dense":
             prm_graph = load_graph(prm_dense_path)
-
 
         positions = nx.get_node_attributes(prm_graph, "pos")
         success_list = []
