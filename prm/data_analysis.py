@@ -29,11 +29,15 @@ gng_node_explored = []
 gngtop_node_explored = []
 prm_node_explored = []
 prmdense_node_explored = []
+gng_mismatch_indices = []
+gngtop_mismatch_indices = []
 index_list = []
 for i in range(len(gng_data[0])):
+	if prmdense_data[0][i]!=gng_data[0][i]:
+		gng_mismatch_indices.append(i)
 	if prmdense_data[0][i]!=gngtop_data[0][i]:
-		print(i)
-	if gng_data[0][i]==True and gngtop_data[0][i]==False and prmdense_data[0][i]==True:
+		gngtop_mismatch_indices.append(i)
+	if gng_data[0][i]==False and gngtop_data[0][i]==True and prmdense_data[0][i]==True:
 		index_list.append(i)
 	if gng_data[0][i] and gngtop_data[0][i] and prmdense_data[0][i]: #and prm_data[0][i]
 		gng_path_cost.append(gng_data[2][i])
@@ -51,7 +55,8 @@ print("gngtop_cost mean:", np.mean(gngtop_path_cost), np.std(gngtop_path_cost))
 print("gng_cost mean:", np.mean(gng_path_cost), np.std(gng_path_cost))
 #print("prm_cost mean:", np.mean(prm_path_cost), np.std(prm_path_cost))
 print("prmdense_cost mean:", np.mean(prmdense_path_cost), np.std(prmdense_path_cost))
-
+print("gng_mismatch_indices",len(gng_mismatch_indices))
+print("gngtop_mismatch_indices",len(gngtop_mismatch_indices))
 print("node_explored")
 print("gngtop_node_explored mean:", np.mean(gngtop_node_explored), np.std(gngtop_node_explored))
 print("gng_node_explored mean:", np.mean(gng_node_explored), np.std(gng_node_explored))

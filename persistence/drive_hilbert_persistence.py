@@ -52,7 +52,7 @@ def get_top_n_persistence_birthnode(n, map_type):
             p = winner_persistence[j]
             # if np.isclose(intensity, p[1]):
             #     top_persistence_node.append(map_data["Xq"][indx])
-            if np.isclose(intensity, p[0], rtol=1e-10, atol=1e-13):
+            if np.isclose(intensity, p[1], rtol=1e-10, atol=1e-13):
                 top_persistence_node.append(map_data["Xq"][indx])
                 print(j, intensity)
     return top_persistence_node

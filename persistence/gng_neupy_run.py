@@ -85,8 +85,11 @@ if __name__ == "__main__":
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor',type=int, default=30)
 	parser.add_argument('--max_edge_age', type=int, default=20)
-	parser.add_argument('--max_epoch', type=int, default=2000)
+	parser.add_argument('--max_epoch', type=int, default=200)
+	parser.add_argument('--max_nodes', type=int, default=2000)
 	parser.add_argument('--log_dir', type=str, default='./output')
+	parser.add_argument('--top_n_persistence',type=int, default=10)
+	parser.add_argument('--is_bias_sampling',type=bool, default=True)
 	args = parser.parse_args()
 
 	args.log_dir = './output/exp_factor-' + str(args.exp_factor) + "-max_epoch-" +\
@@ -97,7 +100,7 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	data, resolution = load_hilbert_map(map_type="intel")
-	persistence_birth_nodes = get_top_n_persistence_birthnode(10, "intel")
+	persistence_birth_nodes = get_top_n_persistence_birthnode(args.top_n_persistence, "intel")
 	#iter_list = get_samples(data.copy(), persistence[2], scale=2, num_samples=600)
 	# samples_plot(samples)
 	original_data = data.copy()
@@ -105,7 +108,7 @@ if __name__ == "__main__":
 
 	# GNG learning code
 	utils.reproducible()
-	gng = create_gng(200, max_edge_age=args.max_edge_age)
+	gng = create_gng(args.max_nodes, max_edge_age=args.max_edge_age)
 	all_samples = []
 	train_error_mean = []
 	train_error_std = []
@@ -113,10 +116,15 @@ if __name__ == "__main__":
 		# if epoch / args.max_epoch >= 0.9:
 		# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch%10], scale=1.5, num_samples=600)
 		# else:
-		if np.random.uniform(0,1) < 1.8:
-			sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+		if args.is_bias_sampling:
+			if np.random.uniform(0,1) < 0.8:
+				sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+			else:
+				print("biasing epoch", epoch)
+				sample_list = get_samples(original_data.copy(), persistence_birth_nodes[np.random.randint(0, 10)], scale=1.5, num_samples=600)
 		else:
-			sample_list = get_samples(original_data.copy(), persistence_birth_nodes[np.random.randint(0, 10)], scale=1.5, num_samples=600)
+			sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+
 		all_samples.extend(sample_list)
 		gng.train(sample_list, epochs=1)
 		train_error_mean.append(np.mean(gng.errors.train))
