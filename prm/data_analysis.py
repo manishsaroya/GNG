@@ -4,18 +4,32 @@ Contact: saroyam@oregonstate.edu
 """
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
+roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
+# roadmap_types = ["gng_top", "gng"]
+data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "prm": "prm_output/",
+				 "prm_dense": "prm_dense_output/"}
 
-with open("test_output/gng1208_200.pickle", 'rb') as tf:
-	gng_data = pickle.load(tf)
+for roadmap in roadmap_types:
+	if roadmap == "gng":
+		with open(data_save_dic[roadmap] + "gng1208_200.pickle", 'rb') as tf:
+			gng_data = pickle.load(tf)
+	elif roadmap == "gng_top":
+		with open(data_save_dic[roadmap] + "gngtop_1208_200.pickle", 'rb') as tf:
+			gngtop_data = pickle.load(tf)
+	elif roadmap == "prm":
+		with open(data_save_dic[roadmap] + 'prm1208.pickle', 'rb') as tf:
+			prm_data = pickle.load(tf)
+	elif roadmap == "prm_dense":
+		with open(data_save_dic[roadmap] + 'prmdense_2500.pickle', 'rb') as tf:
+			prmdense_data = pickle.load(tf)
 
-with open("test_output/gngtop_1208_200.pickle", 'rb') as tf:
-	gngtop_data = pickle.load(tf)
 
-with open("test_output/prm1208.pickle", 'rb') as tf:
-	prm_data = pickle.load(tf)
-
-with open("test_output/prmdense_2500.pickle", 'rb') as tf:
-	prmdense_data = pickle.load(tf)
+# with open("test_output/prm1208.pickle", 'rb') as tf:
+# 	prm_data = pickle.load(tf)
+#
+# with open("test_output/prmdense_2500.pickle", 'rb') as tf:
+# 	prmdense_data = pickle.load(tf)
 	# with open("test_output/" + 'prm1208.pickle', 'wb') as handle:
 	# 	pickle.dump([success_list, node_explored_list, distance_to_goal_list], handle)
 print("hello")
@@ -37,7 +51,7 @@ for i in range(len(gng_data[0])):
 		gng_mismatch_indices.append(i)
 	if prmdense_data[0][i]!=gngtop_data[0][i]:
 		gngtop_mismatch_indices.append(i)
-	if gng_data[0][i]==False and gngtop_data[0][i]==True and prmdense_data[0][i]==True:
+	if gng_data[0][i]==True and gngtop_data[0][i]==False and prmdense_data[0][i]==True:
 		index_list.append(i)
 	if gng_data[0][i] and gngtop_data[0][i] and prmdense_data[0][i]: #and prm_data[0][i]
 		gng_path_cost.append(gng_data[2][i])

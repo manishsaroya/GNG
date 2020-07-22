@@ -18,7 +18,7 @@ def euclidean_distance(a, b):
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
 
-def determine_2closest_vertices(graph, curnode):
+def determine_nclosest_vertices(graph, curnode, n):
     """Where this curnode is actually the x,y index of the data we want to analyze."""
     pos = nx.get_node_attributes(graph, 'pos')
     templist = []
@@ -29,7 +29,7 @@ def determine_2closest_vertices(graph, curnode):
 
     ind = np.lexsort((distlist[:, 0], distlist[:, 1]))
     distlist = distlist[ind]
-    return distlist[0], distlist[1]
+    return distlist[:n]
 
 def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir, fig_num=1, save_data=True, save_graph=True):
     """
@@ -121,7 +121,7 @@ if __name__ =="__main__":
     exp_factor = 30
     used_stored_samples = True
     save_pickle = True
-    test_list = [2,3,6]
+    test_list = [390, 392, 394, 426] #[0,1,2,3,4,100]
     obstacle_threshold = 0.4
 
     # TODO: Finalize map to be used as of now using new map
@@ -133,17 +133,20 @@ if __name__ =="__main__":
     map_array = convert_map_dict_to_array(map_data, resolution)
     # load graph
 
-    roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
-    # roadmap_types = ["gng_top", "gng"]
+    # roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
+    roadmap_types = ["gng_top", "gng", "prm_dense"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/"}
     gng_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-06-21-01-27-07/" \
                "gng200.pickle"
+    gng_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-26-03/gng300.pickle"
     prm_path = "output/max_nodes-1208-k_nearest-5-connection_radius-5.0-date-2020-06-25-11-57-59/prm.pickle"
     # using birth node
     #gng_top_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-06-25-12-36-25/gng200.pickle"
     # using death node
-    gng_top_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-07-16-02-40-03/gng200.pickle"
+    gng_top_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-57-08/gng300.pickle"
+    # this is non top for testing
+    #gng_top_path = "../persistence/output/exp_factor-30-bias_ratio-0.78-max_epoch-300-max_edge_age-20-date-2020-07-16-13-00-51/gng300.pickle"
     #prm_dense_path = "output/max_nodes-2500-k_nearest-5-connection_radius-5.0-date-2020-06-25-12-19-34/prm.pickle"
     prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-14-20-35-53/prm.pickle"
 
@@ -164,7 +167,7 @@ if __name__ =="__main__":
         if roadmap == "gng":
             prm_graph = convert_gng_to_nxgng(gng_path, map_array, obstacle_threshold, resolution)
         elif roadmap == "gng_top":
-            prm_graph = convert_gng_to_nxgng(gng_top_path, map_array,obstacle_threshold, resolution)
+            prm_graph = convert_gng_to_nxgng(gng_top_path, map_array, obstacle_threshold, resolution)
         elif roadmap == "prm":
             prm_graph = load_graph(prm_path)
         elif roadmap == "prm_dense":
@@ -182,12 +185,21 @@ if __name__ =="__main__":
         for lamda_ in eval_iterator: #range(len(goal_list)):
             goal_loc = [goal_list[lamda_]]
             start_loc = [start_list[lamda_]]
-            start_node, _ = determine_2closest_vertices(prm_graph,start_loc[0])
-            goal_node, _ = determine_2closest_vertices(prm_graph,goal_loc[0])
+            start_node_list = determine_nclosest_vertices(prm_graph,start_loc[0], 10)
+            goal_node_list = determine_nclosest_vertices(prm_graph,goal_loc[0], 10)
 
             # Check for collision in start and goal
-            start_collision_check = collision_check(map_array, positions[start_node[0]], start_loc[0], obstacle_threshold, resolution)
-            goal_collision_check = collision_check(map_array, positions[goal_node[0]], goal_loc[0], obstacle_threshold, resolution)
+            for i in range(len(start_node_list)):
+                start_collision_check = collision_check(map_array, positions[start_node_list[i][0]], start_loc[0], obstacle_threshold, resolution)
+                if start_collision_check:
+                    start_node = start_node_list[i]
+                    break
+            for i in range(len(goal_node_list)):
+                goal_collision_check = collision_check(map_array, positions[goal_node_list[i][0]], goal_loc[0], obstacle_threshold, resolution)
+                if goal_collision_check:
+                    goal_node = goal_node_list[i]
+                    break
+
             if start_collision_check and goal_collision_check:
                 kl, prev, nodes_explored =calculate_distances(prm_graph,int(start_node[0]), int(goal_node[0]))
                 path_exists = kl[goal_node[0]] != float('infinity')
