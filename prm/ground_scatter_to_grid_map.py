@@ -35,26 +35,26 @@ if __name__ == "__main__":
 	points = np.c_[df_points.x, df_points.y]
 
 	tree = KDTree(X_query)
-	dist, indices = tree.query(points, distance_upper_bound=q_resolution/2)
-
+	dist, indices = tree.query(points) #, distance_upper_bound=q_resolution)
+	grid_count = df_points.groupby(indices).v.count()
 	grid_values = df_points.groupby(indices).v.sum()
 
 	df_grid = pd.DataFrame(X_query, columns=["x", "y"])
-	df_grid["v"] = grid_values
+	df_grid["v"] = grid_values / (grid_count - grid_values)
 
 	fig, ax = plt.subplots(figsize=(20, 20))
 	#ax.plot(df_points.x, df_points.y, "kx", alpha=0.2)
 	for idx, value in enumerate(df_grid.v):
 		if not np.isnan(value):
-			df_grid.v[idx] = int(value>5)
+			df_grid.v[idx] = int(value>0.42)
 	df_grid = df_grid.dropna()
 	mapper = ax.scatter(df_grid.x, df_grid.y, c=df_grid.v,
 						cmap="viridis",
 						linewidths=0,
 						s=200, marker="o")
-	plt.colorbar(mapper, ax=ax);
+	plt.colorbar(mapper, ax=ax)
 	plt.show()
 	map_data = {"Xq": np.array(list(zip(list(df_grid.x), list(df_grid.y)))), "yq": np.array(list(df_grid.v))}
-	#with open('ground_map_q_resolution.pickle', 'wb') as handle:
-	#	pickle.dump(map_data, handle)
+	with open('ground_map_q_resolution.pickle', 'wb') as handle:
+		pickle.dump(map_data, handle)
 

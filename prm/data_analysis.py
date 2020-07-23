@@ -51,7 +51,9 @@ for i in range(len(gng_data[0])):
 		gng_mismatch_indices.append(i)
 	if prmdense_data[0][i]!=gngtop_data[0][i]:
 		gngtop_mismatch_indices.append(i)
-	if gng_data[0][i]==True and gngtop_data[0][i]==False and prmdense_data[0][i]==True:
+	#if gng_data[0][i]==True and gngtop_data[0][i]==False and prmdense_data[0][i]==False:
+	#	index_list.append(i)
+	if prmdense_data[0][i]==False:
 		index_list.append(i)
 	if gng_data[0][i] and gngtop_data[0][i] and prmdense_data[0][i]: #and prm_data[0][i]
 		gng_path_cost.append(gng_data[2][i])

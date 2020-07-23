@@ -11,11 +11,13 @@ import numpy as np
 import heapq
 import matplotlib.pyplot as pl
 import pickle
+from math import sqrt
+from sklearn.neighbors import NearestNeighbors
 
 
 def euclidean_distance(a, b):
     """Calculate distance between two points."""
-    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+    return sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
 
 def determine_nclosest_vertices(graph, curnode, n):
@@ -43,11 +45,11 @@ def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir
     pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap='jet', s=70, vmin=0, vmax=1, edgecolors='')
     pl.colorbar()
     position = nx.get_node_attributes(graph, 'pos')
-    for node_1, node_2 in graph.edges:
-        weights = np.concatenate([[position[node_1]], [position[node_2]]])
-        line, = pl.plot(*weights.T, color='lightsteelblue')
-        pl.setp(line, linewidth=2, color='lightsteelblue')
-    pl.title('Test image')
+    # for node_1, node_2 in graph.edges:
+    #     weights = np.concatenate([[position[node_1]], [position[node_2]]])
+    #     line, = pl.plot(*weights.T, color='lightsteelblue')
+    #     pl.setp(line, linewidth=2, color='lightsteelblue')
+    # pl.title('Test image')
 
     pl.scatter(start_sample[0], start_sample[1],s=90, marker='v', facecolors='cyan')
     pl.scatter(goal_sample[0], goal_sample[1],s=90, marker='*', facecolors='cyan')
@@ -116,51 +118,117 @@ def convert_gng_to_nxgng(path,map_array, obs_threshold, resolution):
     return nxgraph
 
 
+def add_start_n_goal_to_graph(nxgraph, start_loc, goal_loc, save_pickle, map_array_):
+    positions = nx.get_node_attributes(nxgraph, "pos")
 
-if __name__ =="__main__":
+    start_node_list = determine_nclosest_vertices(nxgraph, start_loc, 7-1)
+    goal_node_list = determine_nclosest_vertices(nxgraph, goal_loc, 7-1)
+
+    # adding start and goal to the graph
+    nxgraph.add_node(len(nxgraph.nodes), pos=start_loc)
+    nxgraph.add_node(len(nxgraph.nodes), pos=goal_loc)
+    # Check for collision in start and goal
+    for i in range(len(start_node_list)):
+        start_collision_check = collision_check(map_array_, positions[start_node_list[i][0]], start_loc,
+                                                obstacle_threshold, resolution)
+        if start_collision_check and euclidean_distance(positions[start_node_list[i][0]], start_loc) < 5.0:
+            nxgraph.add_edge(start_node_list[i][0], len(nxgraph.nodes) - 2)
+            if not save_pickle:
+                print("success with connecting start", start_loc)
+
+    for i in range(len(goal_node_list)):
+        goal_collision_check = collision_check(map_array_, positions[goal_node_list[i][0]], goal_loc,
+                                               obstacle_threshold, resolution)
+        if goal_collision_check and euclidean_distance(positions[goal_node_list[i][0]], goal_loc) < 5.0:
+            nxgraph.add_edge(goal_node_list[i][0], len(nxgraph.nodes) - 1)
+            if not save_pickle:
+                print("success with connecting goal", goal_loc)
+    return nxgraph
+
+#
+# def start_goal_addition(nxgraph, start_loc, goal_loc, save_pickle):
+#     sample_list = [start_loc, goal_loc]
+#     positions =
+#     # find k nearest neighbor
+#     nbrs = NearestNeighbors(n_neighbors=args.k_nearest, algorithm='ball_tree').fit(sample_list)
+#     distances, indices = nbrs.kneighbors(sample_list)
+#     # add graph nodes
+#     for indx, s in enumerate(sample_list):
+#         nxgraph.add_node(indx, pos=(s[0], s[1]))
+#     # add graph edges
+#     for row, node_adjacency_list in enumerate(indices):
+#         for column, other_node in enumerate(node_adjacency_list):
+#             distance_metric = distances[row][column] < args.connection_radius
+#             collision_metric = collision_check(map_array, sample_list[node_adjacency_list[0]],
+#                                                sample_list[other_node], args.obstacle_threshold, resolution)
+#             validation_metric = node_adjacency_list[0] != other_node
+#             if distance_metric and collision_metric and validation_metric:
+#                 prm_graph.add_edge(node_adjacency_list[0], other_node, distance=distances[row][column])
+#     print("rendering")
+
+
+if __name__ == "__main__":
     exp_factor = 30
     used_stored_samples = True
     save_pickle = True
-    test_list = [390, 392, 394, 426] #[0,1,2,3,4,100]
+    test_list = [27,
+                 77,
+                 95,
+                 97,
+                 103,
+                 118,
+                 119,
+                 121,
+                 131,
+                 168,
+                 193,
+                 195,
+                 235,
+                 241,
+                 259,
+                 260,
+                 261,
+                 270,
+                 284,
+                 305,
+                 318,
+                 343,
+                 358,
+                 360,
+                 368,
+                 382,
+                 386,
+                 394,
+                 395,
+                 431,
+                 452,
+                 455,
+                 456]
     obstacle_threshold = 0.4
 
     # TODO: Finalize map to be used as of now using new map
     # load map
     map_data, resolution = load_hilbert_map(map_type="intel")
-    #with open("ground_map_q_resolution.pickle", 'rb') as tf:
-    #    map_data = pickle.load(tf)
-    #resolution = 0.3
     map_array = convert_map_dict_to_array(map_data, resolution)
     # load graph
-
+    with open("ground_map_q_resolution.pickle", 'rb') as tf:
+        ground_map_data = pickle.load(tf)
+    ground_resolution = 0.3
+    ground_map_array = convert_map_dict_to_array(ground_map_data, ground_resolution)
     # roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
     roadmap_types = ["gng_top", "gng", "prm_dense"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/"}
-    gng_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-06-21-01-27-07/" \
-               "gng200.pickle"
+
     gng_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-26-03/gng300.pickle"
     prm_path = "output/max_nodes-1208-k_nearest-5-connection_radius-5.0-date-2020-06-25-11-57-59/prm.pickle"
-    # using birth node
-    #gng_top_path = "../persistence/output/exp_factor-30-max_epoch-200-max_edge_age-20-date-2020-06-25-12-36-25/gng200.pickle"
-    # using death node
     gng_top_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-57-08/gng300.pickle"
-    # this is non top for testing
-    #gng_top_path = "../persistence/output/exp_factor-30-bias_ratio-0.78-max_epoch-300-max_edge_age-20-date-2020-07-16-13-00-51/gng300.pickle"
-    #prm_dense_path = "output/max_nodes-2500-k_nearest-5-connection_radius-5.0-date-2020-06-25-12-19-34/prm.pickle"
-    prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-14-20-35-53/prm.pickle"
+    prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-00-36-05/prm.pickle"
 
-    #if used_stored_samples:
-    with open("test_samples/test_data.pickle", 'rb') as tf:
+    with open("test_samples/test_data1.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
     start_list = test_data[1]
-    # else:
-    #     goal_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
-    #     start_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
-
-    #with open("test_samples/" + 'test_data.pickle', 'wb') as handle:
-    #    pickle.dump([goal_list, start_list], handle)
 
     for roadmap in roadmap_types:
 
@@ -170,10 +238,9 @@ if __name__ =="__main__":
             prm_graph = convert_gng_to_nxgng(gng_top_path, map_array, obstacle_threshold, resolution)
         elif roadmap == "prm":
             prm_graph = load_graph(prm_path)
-        elif roadmap == "prm_dense":
+        else:  # roadmap == "prm_dense":
             prm_graph = load_graph(prm_dense_path)
 
-        positions = nx.get_node_attributes(prm_graph, "pos")
         success_list = []
         node_explored_list = []
         distance_to_goal_list = []
@@ -182,56 +249,36 @@ if __name__ =="__main__":
         else:
             eval_iterator = test_list
 
-        for lamda_ in eval_iterator: #range(len(goal_list)):
-            goal_loc = [goal_list[lamda_]]
-            start_loc = [start_list[lamda_]]
-            start_node_list = determine_nclosest_vertices(prm_graph,start_loc[0], 10)
-            goal_node_list = determine_nclosest_vertices(prm_graph,goal_loc[0], 10)
-
-            # Check for collision in start and goal
-            for i in range(len(start_node_list)):
-                start_collision_check = collision_check(map_array, positions[start_node_list[i][0]], start_loc[0], obstacle_threshold, resolution)
-                if start_collision_check:
-                    start_node = start_node_list[i]
-                    break
-            for i in range(len(goal_node_list)):
-                goal_collision_check = collision_check(map_array, positions[goal_node_list[i][0]], goal_loc[0], obstacle_threshold, resolution)
-                if goal_collision_check:
-                    goal_node = goal_node_list[i]
-                    break
-
-            if start_collision_check and goal_collision_check:
-                kl, prev, nodes_explored =calculate_distances(prm_graph,int(start_node[0]), int(goal_node[0]))
-                path_exists = kl[goal_node[0]] != float('infinity')
+        for lamda_ in eval_iterator:
+            goal_loc = goal_list[lamda_]
+            start_loc = start_list[lamda_]
+            if roadmap == "gng" or roadmap == "gng_top":
+                full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, map_array)
             else:
-                # print(lamda_)
-                # print("goal",goal_collision_check)
-                # print("start",start_collision_check)
-                path_exists = False
+                full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, ground_map_array)
+
+            start_node = len(full_graph.nodes) - 2
+            goal_node = len(full_graph.nodes) - 1
+            kl, prev, nodes_explored = calculate_distances(full_graph, start_node, goal_node)
+            path_exists = kl[goal_node] != float('infinity')
             path_nodes = []
             if path_exists:
                 success_list.append(True)
-                pointer = goal_node[0]
-                path_nodes.append(int(goal_node[0]))
-                while pointer!= start_node[0]:
+                pointer = goal_node
+                path_nodes.append(goal_node)
+                while pointer != start_node:
                     path_nodes.append(prev[pointer])
                     pointer = prev[pointer]
-                #print(path_nodes)
-                #print(kl[goal_node[0]])
-                #print("nodes explored",nodes_explored)
                 node_explored_list.append(nodes_explored)
-                #print("path cost", kl[goal_node[0]] + start_node[1] + goal_node[1])
-                distance_to_goal_list.append(kl[goal_node[0]] + start_node[1] + goal_node[1])
+                distance_to_goal_list.append(kl[goal_node])
             else:
                 success_list.append(False)
                 node_explored_list.append(None)
                 distance_to_goal_list.append(None)
-            #if lamda_ in [87]:  # ,96,102,104,105]:
-            #print("saving file",lamda_)
+
             if not save_pickle:
-                save_img(map_data, prm_graph, start_loc[0], int(start_node[0]), goal_loc[0], int(goal_node[0]),
+                save_img(map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
                        path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False)
-                #print("No path")
 
         print("############## for ", roadmap)
         print("success trial", np.sum(success_list))
