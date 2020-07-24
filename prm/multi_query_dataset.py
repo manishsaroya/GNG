@@ -13,5 +13,5 @@ if __name__ == "__main__":
     goal_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
     start_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
 
-    with open("test_samples/" + 'test_data.pickle', 'wb') as handle:
+    with open("test_samples/" + 'test_data1.pickle', 'wb') as handle:
         pickle.dump([goal_list, start_list], handle)

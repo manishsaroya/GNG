@@ -46,7 +46,12 @@ if __name__ == "__main__":
 	#ax.plot(df_points.x, df_points.y, "kx", alpha=0.2)
 	for idx, value in enumerate(df_grid.v):
 		if not np.isnan(value):
-			df_grid.v[idx] = int(value>0.42)
+			if value > 0.5:
+				df_grid.v[idx] = 1 #int(value>0.5)
+			elif (grid_count[idx] - grid_values[idx])>3:
+				df_grid.v[idx] = 0
+			else:
+				df_grid.v[idx] = np.NaN
 	df_grid = df_grid.dropna()
 	mapper = ax.scatter(df_grid.x, df_grid.y, c=df_grid.v,
 						cmap="viridis",

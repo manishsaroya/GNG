@@ -99,14 +99,15 @@ if __name__ == "__main__":
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor', type=int, default=30)
 	parser.add_argument('--max_edge_age', type=int, default=20)
-	parser.add_argument('--max_epoch', type=int, default=200)
+	parser.add_argument('--max_epoch', type=int, default=300)
 	parser.add_argument('--max_nodes', type=int, default=2000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--is_bias_sampling', type=bool, default=True)
+	parser.add_argument('--bias_ratio', type=float, default=0.78)
 	args = parser.parse_args()
 
-	args.log_dir = './output/exp_factor-' + str(args.exp_factor) + "-max_epoch-" + \
+	args.log_dir = './output/exp_factor-' + str(args.exp_factor) + "-bias_ratio-" + str(args.bias_ratio) +"-max_epoch-" + \
 				   str(args.max_epoch) + "-max_edge_age-" + str(args.max_edge_age) + "-date-" + \
 				   datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '/'
 
@@ -118,7 +119,7 @@ if __name__ == "__main__":
 																  location_type="death", feature_type=0)
 	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, "intel",
 																  location_type="death", feature_type=1)
-	persistence_weights /= np.linalg.norm(persistence_weights, ord=1)
+	#persistence_weights /= np.linalg.norm(persistence_weights, ord=1)
 	# iter_list = get_samples(data.copy(), persistence[2], scale=2, num_samples=600)
 	# samples_plot(samples)
 	original_data = data.copy()
@@ -135,7 +136,7 @@ if __name__ == "__main__":
 		# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch%10], scale=1.5, num_samples=600)
 		# else:
 		if args.is_bias_sampling and epoch > 70:
-			if np.random.uniform(0, 1) < 0.75:
+			if np.random.uniform(0, 1) < args.bias_ratio:
 				sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
 			else:
 				print("biasing epoch", epoch)
@@ -143,12 +144,6 @@ if __name__ == "__main__":
 					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_birth_nodes)
 				else:
 					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_1hom_nodes)
-				# sample_list = []
-				# for i in range(5):
-				# 	small_list = get_samples(original_data.copy(),
-				# 							  persistence_birth_nodes[np.random.randint(0, len(persistence_birth_nodes))],
-				# 							  scale=1.5, num_samples=int(600/5))
-				# 	sample_list.extend(small_list)
 		else:
 			sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
 
@@ -161,20 +156,6 @@ if __name__ == "__main__":
 					   persistence_1homnode=persistence_1hom_nodes, show=True)
 			with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
 				pickle.dump(gng, handle)
-
-	# all_samples = []
-	# # correction epochs
-	# for epoch in range(len(persistence_birth_nodes)):
-	# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=600)
-	# 	all_samples.extend(sample_list)
-	# 	gng.train(sample_list, epochs=1)
-	# 	train_error_mean.append(np.mean(gng.errors.train))
-	# 	train_error_std.append(np.std(gng.errors.train))
-	#
-	# 	draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes,\
-	# 			   samples=sample_list, show=True)
-	# 	with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
-	# 		pickle.dump(gng, handle)
 
 	plot_loss(train_error_mean, train_error_std, args.log_dir)
 
@@ -192,3 +173,16 @@ def draw_persistence(persistence_birthnode, show=False):
 		plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "y*", markersize=20)
 	if show:
 		plt.show()
+	# all_samples = []
+	# # correction epochs
+	# for epoch in range(len(persistence_birth_nodes)):
+	# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch], scale=1.5, num_samples=600)
+	# 	all_samples.extend(sample_list)
+	# 	gng.train(sample_list, epochs=1)
+	# 	train_error_mean.append(np.mean(gng.errors.train))
+	# 	train_error_std.append(np.std(gng.errors.train))
+	#
+	# 	draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes,\
+	# 			   samples=sample_list, show=True)
+	# 	with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
+	# 		pickle.dump(gng, handle)

@@ -19,12 +19,22 @@ def process_persistence(persist):
             persistence.append(p)
     return persistence
 
-def get_top_n_persistence_birthnode(n, map_type):
+
+def get_top_n_persistence_node_location(n, map_type, location_type="death", feature_type=0):
     """
+    :param feature_type: 0 for connected components, 1 for loops
     :param n: top number of persistence
     :param map_type: intel or drive
-    :return: returns the birth persistence node
+    :param location_type: string representing birth or death
+    :return: returns the birth or death persistence node
     """
+    if location_type == "death":
+        location_type_index = 1
+    elif location_type == "birth":
+        location_type_index = 0
+    else:
+        raise ValueError("Invalid location type")
+
     map_data, resolution = load_hilbert_map(map_type="intel")
     map_array = convert_map_dict_to_array(map_data, resolution)
 
@@ -39,7 +49,14 @@ def get_top_n_persistence_birthnode(n, map_type):
         for i in st.persistence():
             print(i)
 
-    first_persistence = st.persistence_intervals_in_dimension(1)
+    first_persistence = st.persistence_intervals_in_dimension(feature_type)
+    if feature_type == 0:
+        remove_indices = []
+        for i in range(len(first_persistence)):
+            if first_persistence[i][1] > 0.4:
+                remove_indices.append(i)
+        first_persistence = np.delete(first_persistence, remove_indices, 0)
+        # remove feature ending after 0.4
     life_span = first_persistence[:,1] - first_persistence[:,0]
     winner_index = life_span.argsort()[-n:][::-1]
     print("len winner index ", len(winner_index))
@@ -52,10 +69,10 @@ def get_top_n_persistence_birthnode(n, map_type):
             p = winner_persistence[j]
             # if np.isclose(intensity, p[1]):
             #     top_persistence_node.append(map_data["Xq"][indx])
-            if np.isclose(intensity, p[1], rtol=1e-10, atol=1e-13):
+            if np.isclose(intensity, p[location_type_index], rtol=1e-10, atol=1e-13):
                 top_persistence_node.append(map_data["Xq"][indx])
                 print(j, intensity)
-    return top_persistence_node
+    return top_persistence_node, life_span[winner_index]
 
 
 if __name__ == "__main__":

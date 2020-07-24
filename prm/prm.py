@@ -79,7 +79,7 @@ if __name__ == "__main__":
 	parser.add_argument('--number_of_samples', type=int, default=10000)
 	parser.add_argument('--exp_factor', type=int, default=30)
 	parser.add_argument('--obstacle_threshold', type=float, default=0.4)
-	parser.add_argument('--max_nodes', type=int, default=4000)
+	parser.add_argument('--max_nodes', type=int, default=1208)
 	parser.add_argument('--k_nearest', type=int, default=7)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
@@ -92,10 +92,10 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	# load map
-	#map_data, resolution = load_hilbert_map(map_type="intel")
+	map_data, resolution = load_hilbert_map(map_type="intel")
 	resolution = 0.3
-	with open("ground_map_q_resolution.pickle", 'rb') as tf:
-		map_data = pickle.load(tf)
+	#with open("ground_map_q_resolution.pickle", 'rb') as tf:
+	#	map_data = pickle.load(tf)
 	map_array = convert_map_dict_to_array(map_data, resolution)
 	# get samples from hilbert maps
 	sample_list = hilbert_samples(map_data.copy(), args.exp_factor, num_samples=args.number_of_samples)

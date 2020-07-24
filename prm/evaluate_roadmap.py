@@ -171,39 +171,7 @@ if __name__ == "__main__":
     exp_factor = 30
     used_stored_samples = True
     save_pickle = True
-    test_list = [27,
-                 77,
-                 95,
-                 97,
-                 103,
-                 118,
-                 119,
-                 121,
-                 131,
-                 168,
-                 193,
-                 195,
-                 235,
-                 241,
-                 259,
-                 260,
-                 261,
-                 270,
-                 284,
-                 305,
-                 318,
-                 343,
-                 358,
-                 360,
-                 368,
-                 382,
-                 386,
-                 394,
-                 395,
-                 431,
-                 452,
-                 455,
-                 456]
+    test_list = [131, 305, 358, 386, 394, 456] #[202, 332, 367]
     obstacle_threshold = 0.4
 
     # TODO: Finalize map to be used as of now using new map
@@ -216,14 +184,16 @@ if __name__ == "__main__":
     ground_resolution = 0.3
     ground_map_array = convert_map_dict_to_array(ground_map_data, ground_resolution)
     # roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
-    roadmap_types = ["gng_top", "gng", "prm_dense"]
+    roadmap_types = ["prm"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/"}
 
     gng_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-26-03/gng300.pickle"
-    prm_path = "output/max_nodes-1208-k_nearest-5-connection_radius-5.0-date-2020-06-25-11-57-59/prm.pickle"
+    #prm_path = "output/max_nodes-1208-k_nearest-5-connection_radius-5.0-date-2020-06-25-11-57-59/prm.pickle"
+    prm_path = "output/max_nodes-1208-k_nearest-7-connection_radius-5.0-date-2020-07-23-13-31-28/prm.pickle"
     gng_top_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-57-08/gng300.pickle"
-    prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-00-36-05/prm.pickle"
+    #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-00-36-05/prm.pickle"
+    prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-10-24-00/prm.pickle"
 
     with open("test_samples/test_data1.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
@@ -252,7 +222,7 @@ if __name__ == "__main__":
         for lamda_ in eval_iterator:
             goal_loc = goal_list[lamda_]
             start_loc = start_list[lamda_]
-            if roadmap == "gng" or roadmap == "gng_top":
+            if roadmap == "gng" or roadmap == "gng_top" or roadmap == "prm":
                 full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, map_array)
             else:
                 full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, ground_map_array)
