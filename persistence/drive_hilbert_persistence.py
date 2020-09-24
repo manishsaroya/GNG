@@ -35,7 +35,7 @@ def get_top_n_persistence_node_location(n, map_type, location_type="death", feat
     else:
         raise ValueError("Invalid location type")
 
-    map_data, resolution = load_hilbert_map(map_type="intel")
+    map_data, resolution = load_hilbert_map(map_type=map_type)
     map_array = convert_map_dict_to_array(map_data, resolution)
 
     fc = FreudenthalComplex(map_array)

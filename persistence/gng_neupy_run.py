@@ -41,6 +41,7 @@ def draw_image(data, dir, fignum, graph=None, persistence_birthnode=None, persis
 	plt.axis("equal")
 	#plt.style.use('seaborn-dark')
 	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=70, vmin=0, vmax=1, edgecolors='')
+	#plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=70, vmin=0, vmax=1, edgecolors='')
 	plt.colorbar(fraction= 0.047, pad=0.02)
 	if graph is not None:
 		for node_1, node_2 in graph.edges:
@@ -106,21 +107,23 @@ if __name__ == "__main__":
 	parser.add_argument('--max_nodes', type=int, default=2000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
-	parser.add_argument('--is_bias_sampling', type=bool, default=True)
+	parser.add_argument('--is_bias_sampling', type=bool, default=False)
 	parser.add_argument('--bias_ratio', type=float, default=0.75)
+	parser.add_argument('--map_type', type=str, default="freiburg")
 	args = parser.parse_args()
 
-	args.log_dir = './output/exp_factor-' + str(args.exp_factor) + "-bias_ratio-" + str(args.bias_ratio) +"-max_epoch-" + \
+	args.log_dir = './output/exp_factor-' + args.map_type + str(args.exp_factor) + "-is-bias-sampling-" + \
+				   str(args.is_bias_sampling) + "-bias_ratio-" + str(args.bias_ratio) +"-max_epoch-" + \
 				   str(args.max_epoch) + "-max_edge_age-" + str(args.max_edge_age) + "-date-" + \
 				   datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '/'
 
 	if not os.path.exists(args.log_dir):
 		os.makedirs(args.log_dir)
 
-	data, resolution = load_hilbert_map(map_type="intel")
-	persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, "intel",
+	data, resolution = load_hilbert_map(map_type=args.map_type)
+	persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
 																  location_type="death", feature_type=0)
-	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, "intel",
+	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
 																  location_type="death", feature_type=1)
 	#persistence_weights /= np.linalg.norm(persistence_weights, ord=1)
 	# iter_list = get_samples(data.copy(), persistence[2], scale=2, num_samples=600)
@@ -159,7 +162,7 @@ if __name__ == "__main__":
 		train_error_mean.append(np.mean(gng.errors.train))
 		train_error_std.append(np.std(gng.errors.train))
 		if epoch % 100 == 0:
-			draw_image(original_data, args.log_dir, epoch,graph=gng.graph, persistence_birthnode=persistence_birth_nodes, \
+			draw_image(original_data, args.log_dir, epoch, graph=gng.graph, persistence_birthnode=persistence_birth_nodes, \
 					   persistence_1homnode=persistence_1hom_nodes, show=True)
 			with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
 				pickle.dump(gng, handle)

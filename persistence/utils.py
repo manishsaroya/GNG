@@ -28,6 +28,15 @@ def load_hilbert_map(map_type='intel'):
                 mapdata_ = pickle.load(tf)
                 mapdata['Xq'] = np.concatenate((mapdata.get('Xq'), mapdata_['Xq'].numpy()), axis=0)
                 mapdata['yq'] = np.concatenate((mapdata.get('yq'), mapdata_['yq'].numpy()), axis=0)
+    elif my_map == "freiburg":
+        resolution = 0.3
+        with open('./../dataset/mapdata_{}.pickle'.format(2815), 'rb') as tf:
+        #with open('./dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
+            mapdata = pickle.load(tf)
+        # convert to numpy
+        mapdata['Xq'] = mapdata['X']
+        mapdata['yq'] = mapdata['Y']
+        #pdb.set_trace()
     else:
         resolution = 0.3
         with open('./../dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
