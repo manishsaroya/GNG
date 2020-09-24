@@ -36,28 +36,31 @@ def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
 	)
 
 
-def draw_image(data, graph, dir, fignum, persistence_birthnode=None, persistence_1homnode=None, samples=None, show=True):
-	fig = plt.figure(figsize=(15, 15))
-	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap='jet', s=70, vmin=0, vmax=1, edgecolors='')
-	plt.colorbar()
-	for node_1, node_2 in graph.edges:
-		weights = np.concatenate([node_1.weight, node_2.weight])
-		line, = plt.plot(*weights.T, color='lightsteelblue')
-		plt.setp(line, linewidth=2, color='lightsteelblue')
+def draw_image(data, dir, fignum, graph=None, persistence_birthnode=None, persistence_1homnode=None, samples=None, show=True):
+	fig = plt.figure(figsize=(40/4, 35/4))
+	plt.axis("equal")
+	#plt.style.use('seaborn-dark')
+	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=70, vmin=0, vmax=1, edgecolors='')
+	plt.colorbar(fraction= 0.047, pad=0.02)
+	if graph is not None:
+		for node_1, node_2 in graph.edges:
+			weights = np.concatenate([node_1.weight, node_2.weight])
+			line, = plt.plot(*weights.T, color='lightsteelblue')
+			plt.setp(line, linewidth=2, color='lightsteelblue')
 
 	if samples is not None:
 		plt.scatter(np.array(samples)[:, 0], np.array(samples)[:, 1], marker='v', facecolors='cyan')
 
-	if persistence_birthnode is not None:
-		for i in range(len(persistence_birthnode)):
-			plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "y*", markersize=20)
-
-	if persistence_1homnode is not None:
-		for i in range(len(persistence_1homnode)):
-			plt.plot(persistence_1homnode[i][0], persistence_1homnode[i][1], "c*", markersize=20)
+	# if persistence_birthnode is not None:
+	# 	for i in range(len(persistence_birthnode)):
+	# 		plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "b*", markersize=25)
+	#
+	# if persistence_1homnode is not None:
+	# 	for i in range(len(persistence_1homnode)):
+	# 		plt.plot(persistence_1homnode[i][0], persistence_1homnode[i][1], "r*", markersize=25)
 
 	if show:
-		plt.savefig(dir + "graph{}.eps".format(fignum))
+		plt.savefig(dir + "graph{}.png".format(fignum))
 	# plt.show()
 
 
@@ -104,7 +107,7 @@ if __name__ == "__main__":
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--is_bias_sampling', type=bool, default=True)
-	parser.add_argument('--bias_ratio', type=float, default=0.78)
+	parser.add_argument('--bias_ratio', type=float, default=0.75)
 	args = parser.parse_args()
 
 	args.log_dir = './output/exp_factor-' + str(args.exp_factor) + "-bias_ratio-" + str(args.bias_ratio) +"-max_epoch-" + \
@@ -125,6 +128,10 @@ if __name__ == "__main__":
 	original_data = data.copy()
 	data = normalize(data, args.exp_factor)
 
+	# hello world
+	draw_image(original_data, args.log_dir, 2, persistence_birthnode=persistence_birth_nodes, \
+			   persistence_1homnode=persistence_1hom_nodes, show=True)
+	#exit()
 	# GNG learning code
 	utils.reproducible()
 	gng = create_gng(args.max_nodes, max_edge_age=args.max_edge_age)
@@ -152,7 +159,7 @@ if __name__ == "__main__":
 		train_error_mean.append(np.mean(gng.errors.train))
 		train_error_std.append(np.std(gng.errors.train))
 		if epoch % 100 == 0:
-			draw_image(original_data, gng.graph, args.log_dir, epoch, persistence_birthnode=persistence_birth_nodes, \
+			draw_image(original_data, args.log_dir, epoch,graph=gng.graph, persistence_birthnode=persistence_birth_nodes, \
 					   persistence_1homnode=persistence_1hom_nodes, show=True)
 			with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
 				pickle.dump(gng, handle)
