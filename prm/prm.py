@@ -21,8 +21,9 @@ def save_img(data, graph, dir, save_data=True, save_graph=True):
 	:param dir: output directory path
 	:return: save prm graph and visualization image to output directory
 	"""
-	fig = pl.figure(figsize=(10, 10))
+	fig = pl.figure(figsize=(40/4, 35/4))
 	ax = fig.add_subplot(111)
+	pl.axis("equal")
 	pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap='viridis', s=70, vmin=0, vmax=1, edgecolors='')
 	pl.colorbar()
 	position = nx.get_node_attributes(graph, 'pos')
@@ -30,7 +31,7 @@ def save_img(data, graph, dir, save_data=True, save_graph=True):
 		weights = np.concatenate([[position[node_1]], [position[node_2]]])
 		line, = pl.plot(*weights.T, color='lightsteelblue')
 		pl.setp(line, linewidth=2, color='lightsteelblue')
-	pl.title('Test image')
+	#pl.title('Test image')
 	if save_data:
 		pl.savefig(dir + "prm.png")
 	if save_graph:
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 	parser.add_argument('--number_of_samples', type=int, default=10000)
 	parser.add_argument('--exp_factor', type=int, default=30)
 	parser.add_argument('--obstacle_threshold', type=float, default=0.4)
-	parser.add_argument('--max_nodes', type=int, default=1208)
+	parser.add_argument('--max_nodes', type=int, default=2000)
 	parser.add_argument('--k_nearest', type=int, default=7)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
