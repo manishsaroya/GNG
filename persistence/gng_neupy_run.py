@@ -36,12 +36,12 @@ def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
 	)
 
 
-def draw_image(data, dir, fignum, graph=None, persistence_birthnode=None, persistence_1homnode=None, samples=None, show=True):
+def draw_image(data,resolution, dir, fignum, graph=None, persistence_birthnode=None, persistence_1homnode=None, samples=None, show=True):
 	fig = plt.figure(figsize=(40/4, 35/4))
 	plt.axis("equal")
 	#plt.style.use('seaborn-dark')
-	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=70, vmin=0, vmax=1, edgecolors='')
-	#plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=70, vmin=0, vmax=1, edgecolors='')
+	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=(70/0.3) * resolution*0.2, vmin=0, vmax=1, edgecolors='')
+	#plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=10, vmin=0, vmax=1, edgecolors='')
 	plt.colorbar(fraction= 0.047, pad=0.02)
 	if graph is not None:
 		for node_1, node_2 in graph.edges:
@@ -61,7 +61,7 @@ def draw_image(data, dir, fignum, graph=None, persistence_birthnode=None, persis
 	# 		plt.plot(persistence_1homnode[i][0], persistence_1homnode[i][1], "r*", markersize=25)
 
 	if show:
-		plt.savefig(dir + "graph{}.png".format(fignum))
+		plt.savefig(dir + "graph{}.eps".format(fignum))
 	# plt.show()
 
 
@@ -88,11 +88,12 @@ def plot_loss(train_error_mean, train_error_std, dir):
 	plt.title("Train Error")
 	plt.savefig(dir + "training_error.png")
 
-def get_multi_gauss_samples(local_map_data, persistence_loc):
+
+def get_multi_gauss_samples(local_map_data, persistence_loc, exp_factor):
 	sample_list = []
 	for i in range(2):
 		small_list = get_samples(local_map_data.copy(),
-								 persistence_loc[np.random.randint(0, len(persistence_loc))],
+								 persistence_loc[np.random.randint(0, len(persistence_loc))], exp_factor,
 								 scale=1.5, num_samples=int(600 / 2))
 		sample_list.extend(small_list)
 	return sample_list
@@ -101,14 +102,14 @@ def get_multi_gauss_samples(local_map_data, persistence_loc):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
-	parser.add_argument('--exp_factor', type=int, default=30)
-	parser.add_argument('--max_edge_age', type=int, default=20)
-	parser.add_argument('--max_epoch', type=int, default=300)
-	parser.add_argument('--max_nodes', type=int, default=2000)
+	parser.add_argument('--exp_factor', type=int, default=20)
+	parser.add_argument('--max_edge_age', type=int, default=40)
+	parser.add_argument('--max_epoch', type=int, default=400)
+	parser.add_argument('--max_nodes', type=int, default=1000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
-	parser.add_argument('--is_bias_sampling', type=bool, default=False)
-	parser.add_argument('--bias_ratio', type=float, default=0.75)
+	parser.add_argument('--is_bias_sampling', type=bool, default=True)
+	parser.add_argument('--bias_ratio', type=float, default=0.78)
 	parser.add_argument('--map_type', type=str, default="freiburg")
 	args = parser.parse_args()
 
@@ -132,7 +133,7 @@ if __name__ == "__main__":
 	data = normalize(data, args.exp_factor)
 
 	# hello world
-	draw_image(original_data, args.log_dir, 2, persistence_birthnode=persistence_birth_nodes, \
+	draw_image(original_data, resolution, args.log_dir, 2, persistence_birthnode=persistence_birth_nodes, \
 			   persistence_1homnode=persistence_1hom_nodes, show=True)
 	#exit()
 	# GNG learning code
@@ -151,9 +152,9 @@ if __name__ == "__main__":
 			else:
 				print("biasing epoch", epoch)
 				if np.random.uniform(0,1) > 0.5:
-					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_birth_nodes)
+					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_birth_nodes, args.exp_factor)
 				else:
-					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_1hom_nodes)
+					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_1hom_nodes, args.exp_factor)
 		else:
 			sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
 
@@ -162,7 +163,7 @@ if __name__ == "__main__":
 		train_error_mean.append(np.mean(gng.errors.train))
 		train_error_std.append(np.std(gng.errors.train))
 		if epoch % 100 == 0:
-			draw_image(original_data, args.log_dir, epoch, graph=gng.graph, persistence_birthnode=persistence_birth_nodes, \
+			draw_image(original_data, resolution, args.log_dir, epoch, graph=gng.graph, persistence_birthnode=persistence_birth_nodes, \
 					   persistence_1homnode=persistence_1hom_nodes, show=True)
 			with open(args.log_dir + 'gng{:d}.pickle'.format(epoch), 'wb') as handle:
 				pickle.dump(gng, handle)
