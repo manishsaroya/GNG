@@ -3,7 +3,7 @@ Author: Manish Saroya
 Contact: saroyam@oregonstate.edu
 Evaluates the roadmaps
 """
-from persistence.utils import load_graph, load_hilbert_map, convert_map_dict_to_array
+from persistence.utils import load_graph, load_hilbert_map, convert_map_dict_to_array, convert_gng_to_nxgng
 from prm import hilbert_samples, collision_check
 from future.utils import iteritems
 import networkx as nx
@@ -33,42 +33,46 @@ def determine_nclosest_vertices(graph, curnode, n):
     distlist = distlist[ind]
     return distlist[:n]
 
-def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir, fig_num=1, save_data=True, save_graph=True):
+def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir, fig_num=1, save_data=True, save_graph=True, figure_cmap="jet"):
     """
     :param data: map data dictionary
     :param graph: prm nx graph
     :param dir: output directory path
     :return: save prm graph and visualization image to output directory
     """
-    fig = pl.figure(figsize=(10, 10))
+    fig = pl.figure(figsize=(40/4, 35/4))
     ax = fig.add_subplot(111)
-    pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap='jet', s=70, vmin=0, vmax=1, edgecolors='')
-    pl.colorbar()
+    pl.axis("equal")
+    pl.ylim(-20, 10)
+    pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap=figure_cmap, s=10, vmin=0, vmax=1, edgecolors='')
+    pl.colorbar(fraction= 0.047, pad=0.02)
     position = nx.get_node_attributes(graph, 'pos')
-    # for node_1, node_2 in graph.edges:
-    #     weights = np.concatenate([[position[node_1]], [position[node_2]]])
-    #     line, = pl.plot(*weights.T, color='lightsteelblue')
-    #     pl.setp(line, linewidth=2, color='lightsteelblue')
-    # pl.title('Test image')
+    # Plot the graph
+    for node_1, node_2 in graph.edges:
+        weights = np.concatenate([[position[node_1]], [position[node_2]]])
+        line, = pl.plot(*weights.T, color='lightsteelblue')
+        pl.setp(line, linewidth=2, color='lightsteelblue')
 
+    # plot start and goal
     pl.scatter(start_sample[0], start_sample[1],s=90, marker='v', facecolors='cyan')
     pl.scatter(goal_sample[0], goal_sample[1],s=90, marker='*', facecolors='cyan')
     pl.scatter(position[start][0], position[start][1], s=90, marker='v', facecolors='yellow')
     pl.scatter(position[goal][0], position[goal][1], s=90, marker='*', facecolors='yellow')
 
+    # plot path
     for path_n in path_nodes:
         pl.scatter(position[path_n][0], position[path_n][1],s=40, marker='*', facecolors='red')
 
     for i in range(len(path_nodes)-1):
         weights = np.concatenate([[position[path_nodes[i]]], [position[path_nodes[i+1]]]])
         line, = pl.plot(*weights.T, color='white')
-        pl.setp(line, linewidth=2, color='white')
+        pl.setp(line, linewidth=3, color='white')
 
 
     if save_data:
-        pl.savefig(dir + "prm{}.eps".format(fig_num))
+        pl.savefig(dir + "freiburg_prm{}.eps".format(fig_num))
     if save_graph:
-        with open(dir + 'prm.pickle', 'wb') as handle:
+        with open(dir + 'freiburg_prm.pickle', 'wb') as handle:
             pickle.dump(graph, handle)
 
 
@@ -102,20 +106,18 @@ def calculate_distances(graph, starting_vertex, goal_vertex):
 
     return distances, prev, nodes_explored
 
-def convert_gng_to_nxgng(path,map_array, obs_threshold, resolution):
-    with open(path, 'rb') as tf:
-        g = pickle.load(tf)
-    nxgraph = nx.Graph()
-    nodeid = {}
-    for indx, node in enumerate(g.graph.nodes):
-        nodeid[node] = indx
-        nxgraph.add_node(nodeid[node], pos=(node.weight[0][0], node.weight[0][1]))
-    positions = nx.get_node_attributes(nxgraph, "pos")
-    for node_1, node_2 in g.graph.edges:
-        if collision_check(map_array, positions[nodeid[node_1]],
-                                           positions[nodeid[node_2]], obs_threshold, resolution):
-            nxgraph.add_edge(nodeid[node_1], nodeid[node_2])
+
+def filter_graph_with_ground_truth_map(nxgraph, ground_truth_array, obs_threshold, ground_resolution):
+    position = nx.get_node_attributes(nxgraph, 'pos')
+    remove_count = 0
+    all_edges = list(nxgraph.edges())
+    for node_1, node_2 in all_edges:
+        if not collision_check(ground_truth_array, position[node_1], position[node_2], obs_threshold, ground_resolution):
+            nxgraph.remove_edge(node_1, node_2)
+            remove_count += 1
+    #print(remove_count)
     return nxgraph
+
 
 
 def add_start_n_goal_to_graph(nxgraph, start_loc, goal_loc, save_pickle, map_array_):
@@ -145,57 +147,51 @@ def add_start_n_goal_to_graph(nxgraph, start_loc, goal_loc, save_pickle, map_arr
                 print("success with connecting goal", goal_loc)
     return nxgraph
 
-#
-# def start_goal_addition(nxgraph, start_loc, goal_loc, save_pickle):
-#     sample_list = [start_loc, goal_loc]
-#     positions =
-#     # find k nearest neighbor
-#     nbrs = NearestNeighbors(n_neighbors=args.k_nearest, algorithm='ball_tree').fit(sample_list)
-#     distances, indices = nbrs.kneighbors(sample_list)
-#     # add graph nodes
-#     for indx, s in enumerate(sample_list):
-#         nxgraph.add_node(indx, pos=(s[0], s[1]))
-#     # add graph edges
-#     for row, node_adjacency_list in enumerate(indices):
-#         for column, other_node in enumerate(node_adjacency_list):
-#             distance_metric = distances[row][column] < args.connection_radius
-#             collision_metric = collision_check(map_array, sample_list[node_adjacency_list[0]],
-#                                                sample_list[other_node], args.obstacle_threshold, resolution)
-#             validation_metric = node_adjacency_list[0] != other_node
-#             if distance_metric and collision_metric and validation_metric:
-#                 prm_graph.add_edge(node_adjacency_list[0], other_node, distance=distances[row][column])
-#     print("rendering")
-
 
 if __name__ == "__main__":
-    exp_factor = 30
+    #exp_factor = 30
     used_stored_samples = True
-    save_pickle = True
-    test_list = [131, 305, 358, 386, 394, 456] #[202, 332, 367]
-    obstacle_threshold = 0.4
+    save_pickle = False
+    test_list = [12] #, 66, 95, 147, 198, 260, 265, 290, 331, 341, 349, 354, 377, 394] #[131, 305, 358, 386, 394, 456] #[202, 332, 367]
+    obstacle_threshold = 0.5
 
     # TODO: Finalize map to be used as of now using new map
     # load map
-    map_data, resolution = load_hilbert_map(map_type="intel")
+    map_data, resolution = load_hilbert_map(map_type="freiburg")
     map_array = convert_map_dict_to_array(map_data, resolution)
     # load graph
-    with open("ground_map_q_resolution.pickle", 'rb') as tf:
+    with open("freiburg_ground_map_q_resolution_final.pickle", 'rb') as tf:
         ground_map_data = pickle.load(tf)
-    ground_resolution = 0.3
+    ground_resolution = 0.2
     ground_map_array = convert_map_dict_to_array(ground_map_data, ground_resolution)
-    # roadmap_types = ["gng", "gng_top", "prm", "prm_dense"]
-    roadmap_types = ["prm"]
-    data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "prm": "prm_output/",
-                     "prm_dense": "prm_dense_output/"}
+    #roadmap_types = ["gng", "gng_top", "prm", "prm_dense", "prm_dense_hilbert"]
+    #roadmap_types = ["gng_top", "gng", "prm", "prm_dense_hilbert", "prm_dense"]
+    roadmap_types = ["gng_top_feedback", "gng"]
+    data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
+                     "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
     gng_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-26-03/gng300.pickle"
-    #prm_path = "output/max_nodes-1208-k_nearest-5-connection_radius-5.0-date-2020-06-25-11-57-59/prm.pickle"
-    prm_path = "output/max_nodes-1208-k_nearest-7-connection_radius-5.0-date-2020-07-23-13-31-28/prm.pickle"
+    #prm_path = "output/max_nodes-1208-k_nearest-7-connection_radius-5.0-date-2020-07-23-13-31-28/prm.pickle"
+    prm_path = "output/max_nodes-2000-k_nearest-7-connection_radius-5.0-date-2020-08-15-14-59-35/prm.pickle"
     gng_top_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-57-08/gng300.pickle"
     #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-00-36-05/prm.pickle"
     prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-10-24-00/prm.pickle"
+    prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-08-14-15-42-16/prm.pickle"
 
-    with open("test_samples/test_data1.pickle", 'rb') as tf:
+
+    # for ICRA
+    #gng_top_path = "../persistence/output/exp_factor-freiburg30-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-40-date-2020-09-29-10-44-35/gng200.pickle"
+    #gng_path = "../persistence/output/exp_factor-freiburg30-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-40-date-2020-09-29-11-29-07/gng200.pickle"
+    gng_top_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-40-date-2020-10-01-11-30-44/gng400.pickle"
+    gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-40-date-2020-09-30-14-29-54/gng400.pickle"
+    gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-07-02-50-39/gng400.pickle"
+    prm_path = "output/max_nodes-1000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-25-25/prm.pickle"
+
+    #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-53-33/prm.pickle"
+    # substituting ground truth with topological feedback
+    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-07-02-36-23/gng400.pickle"
+    prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-19-39/prm.pickle"
+    with open("test_samples/freiburg_test_data1_thesis.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
     start_list = test_data[1]
@@ -203,11 +199,15 @@ if __name__ == "__main__":
     for roadmap in roadmap_types:
 
         if roadmap == "gng":
-            prm_graph = convert_gng_to_nxgng(gng_path, map_array, obstacle_threshold, resolution)
+            prm_graph = convert_gng_to_nxgng(load_graph(gng_path), map_array, obstacle_threshold, resolution)
         elif roadmap == "gng_top":
-            prm_graph = convert_gng_to_nxgng(gng_top_path, map_array, obstacle_threshold, resolution)
+            prm_graph = convert_gng_to_nxgng(load_graph(gng_top_path), map_array, obstacle_threshold, resolution)
+        elif roadmap == "gng_top_feedback":
+            prm_graph = convert_gng_to_nxgng(load_graph(gng_top_feedback_path), map_array, obstacle_threshold, resolution)
         elif roadmap == "prm":
             prm_graph = load_graph(prm_path)
+        elif roadmap == "prm_dense_hilbert":
+            prm_graph = load_graph(prm_dense_hilbert_path)
         else:  # roadmap == "prm_dense":
             prm_graph = load_graph(prm_dense_path)
 
@@ -222,10 +222,11 @@ if __name__ == "__main__":
         for lamda_ in eval_iterator:
             goal_loc = goal_list[lamda_]
             start_loc = start_list[lamda_]
-            if roadmap == "gng" or roadmap == "gng_top" or roadmap == "prm":
+            if roadmap == "gng" or roadmap == "gng_top" or roadmap == "gng_top_feedback" or roadmap == "prm" or roadmap == "prm_dense_hilbert":
                 full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, map_array)
             else:
                 full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, ground_map_array)
+            #full_graph = filter_graph_with_ground_truth_map(full_graph, ground_map_array, obstacle_threshold, ground_resolution)
 
             start_node = len(full_graph.nodes) - 2
             goal_node = len(full_graph.nodes) - 1
@@ -247,8 +248,12 @@ if __name__ == "__main__":
                 distance_to_goal_list.append(None)
 
             if not save_pickle:
-                save_img(map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
-                       path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False)
+                if roadmap == "prm_dense":
+                    save_img(ground_map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
+                             path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False, figure_cmap="viridis")
+                else:
+                    save_img(map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
+                           path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False)
 
         print("############## for ", roadmap)
         print("success trial", np.sum(success_list))
@@ -257,15 +262,21 @@ if __name__ == "__main__":
         print("distance to goal list", distance_to_goal_list)
         if save_pickle:
             if roadmap == "gng":
-                with open(data_save_dic[roadmap] + 'gng1208_200.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + 'freiburg_gng1208_200.pickle', 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "gng_top":
-                with open(data_save_dic[roadmap] + 'gngtop_1208_200.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + 'freiburg_gngtop_1208_200.pickle', 'wb') as handle:
+                    pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
+            elif roadmap == "gng_top_feedback":
+                with open(data_save_dic[roadmap] + 'freiburg_gngtop_feedback_1208_200.pickle', 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "prm":
-                with open(data_save_dic[roadmap] + 'prm1208.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + 'freiburg_prm1208.pickle', 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "prm_dense":
-                with open(data_save_dic[roadmap] + 'prmdense_2500.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + 'freiburg_prmdense_2500.pickle', 'wb') as handle:
+                    pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
+            elif roadmap == "prm_dense_hilbert":
+                with open(data_save_dic[roadmap] + 'freiburg_prmdense_hilbert4000.pickle', 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
 
