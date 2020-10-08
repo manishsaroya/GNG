@@ -151,7 +151,7 @@ def add_start_n_goal_to_graph(nxgraph, start_loc, goal_loc, save_pickle, map_arr
 if __name__ == "__main__":
     #exp_factor = 30
     used_stored_samples = True
-    save_pickle = False
+    save_pickle = True
     test_list = [12] #, 66, 95, 147, 198, 260, 265, 290, 331, 341, 349, 354, 377, 394] #[131, 305, 358, 386, 394, 456] #[202, 332, 367]
     obstacle_threshold = 0.5
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     ground_map_array = convert_map_dict_to_array(ground_map_data, ground_resolution)
     #roadmap_types = ["gng", "gng_top", "prm", "prm_dense", "prm_dense_hilbert"]
     #roadmap_types = ["gng_top", "gng", "prm", "prm_dense_hilbert", "prm_dense"]
-    roadmap_types = ["gng_top_feedback", "gng"]
+    roadmap_types = ["prm_dense_hilbert"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
@@ -177,21 +177,28 @@ if __name__ == "__main__":
     #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-00-36-05/prm.pickle"
     prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-10-24-00/prm.pickle"
     prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-08-14-15-42-16/prm.pickle"
-
+    prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-08-02-43-53/prm.pickle"
 
     # for ICRA
     #gng_top_path = "../persistence/output/exp_factor-freiburg30-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-40-date-2020-09-29-10-44-35/gng200.pickle"
     #gng_path = "../persistence/output/exp_factor-freiburg30-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-40-date-2020-09-29-11-29-07/gng200.pickle"
     gng_top_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-40-date-2020-10-01-11-30-44/gng400.pickle"
+    gng_top_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-08-01-44-11/gng400.pickle"
     gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-40-date-2020-09-30-14-29-54/gng400.pickle"
     gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-07-02-50-39/gng400.pickle"
+    gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-50-date-2020-10-07-13-17-52/gng400.pickle"
     prm_path = "output/max_nodes-1000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-25-25/prm.pickle"
 
     #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-53-33/prm.pickle"
     # substituting ground truth with topological feedback
     gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-07-02-36-23/gng400.pickle"
+    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-08-01-30-10/gng400.pickle"
+    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-50-date-2020-10-08-02-16-58/gng400.pickle"
+    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-100-date-2020-10-08-02-25-27/gng400.pickle"
     prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-19-39/prm.pickle"
-    with open("test_samples/freiburg_test_data1_thesis.pickle", 'rb') as tf:
+    #with open("test_samples/freiburg_test_data1_thesis.pickle", 'rb') as tf:
+    #    test_data = pickle.load(tf)
+    with open("test_samples/freiburg_hilbert_map.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
     start_list = test_data[1]

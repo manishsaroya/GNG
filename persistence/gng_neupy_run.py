@@ -6,7 +6,7 @@ Contact: saroyam@oregonstate.edu
 from persistence.biased_sampling import get_samples, samples_plot
 from persistence.utils import load_hilbert_map, convert_map_dict_to_array, convert_gng_to_nxgng
 from persistence.drive_hilbert_persistence import get_top_n_persistence_node_location
-from persistence.utils import get_topological_accuracy
+from persistence.utils import get_topological_accuracy, get_0hom_topological_accuracy
 import numpy as np
 from neupy import algorithms, utils
 import matplotlib.pyplot as plt
@@ -55,11 +55,11 @@ def draw_image(data,resolution, dir, fignum, graph=None, persistence_birthnode=N
 
 	if persistence_birthnode is not None:
 		for i in range(len(persistence_birthnode)):
-			plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "*", markersize=10, markerfacecolor="None", markeredgecolor="blue", markeredgewidth=5)
+			plt.plot(persistence_birthnode[i][0], persistence_birthnode[i][1], "*", markersize=10, markerfacecolor="None", markeredgecolor="blue", markeredgewidth=0.5)
 
 	if persistence_1homnode is not None:
 		for i in range(len(persistence_1homnode)):
-			plt.plot(persistence_1homnode[i][0], persistence_1homnode[i][1], "*", markersize=10, markerfacecolor="None", markeredgecolor="red", markeredgewidth=5)
+			plt.plot(persistence_1homnode[i][0], persistence_1homnode[i][1], "*", markersize=10, markerfacecolor="None", markeredgecolor="red", markeredgewidth=0.5)
 
 	if show:
 		plt.savefig(dir + "graph{}.eps".format(fignum))
@@ -133,13 +133,13 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor', type=int, default=20)
-	parser.add_argument('--max_edge_age', type=int, default=70)
+	parser.add_argument('--max_edge_age', type=int, default=100)
 	parser.add_argument('--max_epoch', type=int, default=400)
 	parser.add_argument('--max_nodes', type=int, default=1000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--local_distance', type=float, default=5.0)
-	parser.add_argument('--is_bias_sampling', type=bool, default=False)
+	parser.add_argument('--is_bias_sampling', type=bool, default=True)
 	parser.add_argument('--bias_ratio', type=float, default=0.75)
 	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
 	parser.add_argument('--map_type', type=str, default="freiburg")
@@ -155,6 +155,8 @@ if __name__ == "__main__":
 
 	data, resolution = load_hilbert_map(map_type=args.map_type)
 	map_array = convert_map_dict_to_array(data, resolution)
+	#plt.imshow(map_array)
+	#plt.show()
 	persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
 																  location_type="death", feature_type=0)
 	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
@@ -186,7 +188,21 @@ if __name__ == "__main__":
 			else:
 				print("biasing epoch", epoch)
 				if np.random.uniform(0,1) > 0.5:
-					sample_list = get_multi_gauss_samples(original_data.copy(), persistence_birth_nodes, args.exp_factor, 1.1)
+					features = persistence_birth_nodes.copy()
+					gng_nx = convert_gng_to_nxgng(gng, map_array, args.obstacle_threshold, resolution)
+					accuracy = get_0hom_topological_accuracy(gng_nx, features, 1.1)
+					accuracy_indices = [i for i, val in enumerate(accuracy) if val]
+					print("connected", accuracy_indices)
+					for i in sorted(accuracy_indices, reverse=True):
+						del features[i]
+
+					if len(features):
+						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, 1.1)
+						#samples_plot(original_data, sample_list, epoch, args.log_dir)
+					else:
+						print("ALL CONNECTIONS RESOLVED, UNIFORM SAMPLING FOR THIS EPOCH")
+						sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
+					#sample_list = get_multi_gauss_samples(original_data.copy(), persistence_birth_nodes, args.exp_factor, 1.1)
 					#samples_plot(original_data, sample_list, epoch, args.log_dir)
 				else:
 					features = persistence_1hom_nodes.copy()
@@ -196,11 +212,12 @@ if __name__ == "__main__":
 					print(accuracy_indices)
 					for i in sorted(accuracy_indices, reverse=True):
 						del features[i]
+
 					# draw_image(original_data, resolution, args.log_dir, epoch, graph=gng.graph,
 					# 		   persistence_birthnode=persistence_birth_nodes, \
 					# 		   persistence_1homnode=persistence_1hom_nodes, show=True)
 					# get_important_regions(gng, persistence_1hom_nodes)
-					# TODO: Handle null features cases
+
 					if len(features):
 						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, 2.5)
 						#samples_plot(original_data, sample_list, epoch, args.log_dir)

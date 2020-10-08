@@ -25,23 +25,25 @@ import matplotlib.pyplot as plt
 
 #def g(x):
 
-def samples_plot(samples, show=False):
-	fig = plt.figure("samples_out", figsize=(8, 8))
-	ax = fig.add_subplot(111)
-	plt.xlim(-80,80)
-	plt.ylim(-80,80)
+def samples_plot(data, samples, fignum, dir, show=False):
+	plt.clf()
+	fig = plt.figure("samples_out", figsize=(40/2, 35/2))
+	plt.axis("equal")
+	plt.style.use('seaborn-dark')
+	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=10, vmin=0, vmax=1, edgecolors='')
+	plt.colorbar(fraction= 0.047, pad=0.02)
+	plt.xlim(-30,20)
+	plt.ylim(-10,10)
 	plt.scatter(np.array(samples)[:, 0], np.array(samples)[:, 1], facecolors='r')
 	if show:
 		plt.show()
-	#pl.savefig("samples_intel.png")
-	#pl.clf()
-	#pl.close("samples_out")
+	else:
+		plt.savefig(dir + "samples{}.png".format(fignum))
+	plt.clf()
 
-
-#	return st.norm.pdf(x, loc =)
-
-def get_samples(map_data, pose, scale=1, num_samples=600):
+def get_samples(map_data, pose, exp_factor, scale=1, num_samples=600):
 	"""
+	:param exp_factor: exponential factor
 	:param map_data: map info
 	:param pose: mean for the multivariate gaussian
 	:param scale: std dev
@@ -52,7 +54,7 @@ def get_samples(map_data, pose, scale=1, num_samples=600):
 
 	map_data['yq'] = np.ones(len(map_data['yq'])) - map_data['yq']
 
-	map_data['yq'] = np.exp(30 * map_data['yq'])
+	map_data['yq'] = np.exp(exp_factor * map_data['yq'])
 
 	for index in range(len(map_data["yq"])):
 		map_data["yq"][index] *= rv.pdf(map_data["Xq"][index])

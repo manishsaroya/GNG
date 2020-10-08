@@ -187,3 +187,54 @@ def get_topological_accuracy(gng_, feature, local_distance):
 	# draw_image(data, resolution, "", f_indx, persistence_birthnode=None, graph=local_graph,
 	# path_nodes=polygon, persistence_1homnode=[f], show=True)
 	return topological_accuracy
+
+
+def count_components(g):
+	is_connected = False
+	explored = {}
+	for node in g.nodes:
+		explored[node] = False
+	num_connected_components = 0
+	while not all(value==True for value in explored.values()):
+		for key, value in explored.items():
+			if not value:
+				start = key
+				break
+		queue = [start]
+		explored[start] = True
+		node_explored_count = 0
+		while len(queue) != 0:
+			node = queue.pop(0)
+			for adj in g.neighbors(node):
+				if not explored[adj]:
+					explored[adj] = True
+					queue.append(adj)
+			node_explored_count += 1
+		if node_explored_count > 1:
+			num_connected_components += 1
+		#print("component=", num_connected_components, "num_nodes=", node_explored_count)
+	if num_connected_components == 1:
+		is_connected = True
+	return is_connected, num_connected_components
+
+def get_0hom_topological_accuracy(gng_, feature, local_distance):
+	topological_accuracy_0hom = []
+	position = nx.get_node_attributes(gng_, 'pos')
+
+	for f_indx, f in enumerate(feature):
+		local_graph = nx.Graph()
+		for indx, node in enumerate(gng_.nodes):
+			pose = position[node]
+			distance = math.sqrt((f[0] - pose[0]) ** 2 + (f[1] - pose[1]) ** 2)
+			if local_distance > distance:
+				local_graph.add_node(indx, pos=pose)
+
+		for node1, node2 in gng_.edges:
+			if (node1 in local_graph.nodes) and (node2 in local_graph.nodes):
+				local_graph.add_edge(node1, node2)
+
+		is_connected, num_components = count_components(local_graph)
+
+		#print(f_indx, is_connected, num_components)
+		topological_accuracy_0hom.append(is_connected)
+	return topological_accuracy_0hom
