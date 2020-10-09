@@ -133,12 +133,13 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor', type=int, default=20)
-	parser.add_argument('--max_edge_age', type=int, default=100)
+	parser.add_argument('--max_edge_age', type=int, default=70)
 	parser.add_argument('--max_epoch', type=int, default=400)
 	parser.add_argument('--max_nodes', type=int, default=1000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--local_distance', type=float, default=5.0)
+	parser.add_argument('--local_distance_0hom', type=float, default=1.1)
 	parser.add_argument('--is_bias_sampling', type=bool, default=True)
 	parser.add_argument('--bias_ratio', type=float, default=0.75)
 	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
@@ -190,7 +191,7 @@ if __name__ == "__main__":
 				if np.random.uniform(0,1) > 0.5:
 					features = persistence_birth_nodes.copy()
 					gng_nx = convert_gng_to_nxgng(gng, map_array, args.obstacle_threshold, resolution)
-					accuracy = get_0hom_topological_accuracy(gng_nx, features, 1.1)
+					accuracy = get_0hom_topological_accuracy(gng_nx, features, args.local_distance_0hom)
 					accuracy_indices = [i for i, val in enumerate(accuracy) if val]
 					print("connected", accuracy_indices)
 					for i in sorted(accuracy_indices, reverse=True):

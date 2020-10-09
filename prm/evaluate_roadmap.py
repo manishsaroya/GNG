@@ -33,6 +33,25 @@ def determine_nclosest_vertices(graph, curnode, n):
     distlist = distlist[ind]
     return distlist[:n]
 
+
+def plot_all_paths(data, path_set, graph):
+    fig = pl.figure(figsize=(40/4, 35/4))
+    ax = fig.add_subplot(111)
+    pl.axis("equal")
+    pl.ylim(-20, 10)
+    pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=10, vmin=0, vmax=1, edgecolors='')
+    pl.colorbar(fraction= 0.047, pad=0.02)
+    position = nx.get_node_attributes(graph, 'pos')
+    for path_nodes in path_set:
+        for path_n in path_nodes:
+            pl.scatter(position[path_n][0], position[path_n][1], s=40, marker='*', facecolors='red')
+        #if len(path_nodes)>0:
+        #    for i in range(len(path_nodes)-1):
+        #        weights = np.concatenate([[position[path_nodes[i]]], [position[path_nodes[i+1]]]])
+        #        line, = pl.plot(*weights.T, color='white')
+        #        pl.setp(line, linewidth=3, color='white')
+    pl.show()
+
 def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir, fig_num=1, save_data=True, save_graph=True, figure_cmap="jet"):
     """
     :param data: map data dictionary
@@ -164,9 +183,9 @@ if __name__ == "__main__":
         ground_map_data = pickle.load(tf)
     ground_resolution = 0.2
     ground_map_array = convert_map_dict_to_array(ground_map_data, ground_resolution)
-    #roadmap_types = ["gng", "gng_top", "prm", "prm_dense", "prm_dense_hilbert"]
+    #roadmap_types = ["gng", "gng_top", "gng_top_feedback", "prm", "prm_dense", "prm_dense_hilbert"]
     #roadmap_types = ["gng_top", "gng", "prm", "prm_dense_hilbert", "prm_dense"]
-    roadmap_types = ["prm_dense_hilbert"]
+    roadmap_types = ["prm_dense"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
@@ -176,9 +195,11 @@ if __name__ == "__main__":
     gng_top_path = "../persistence/output/exp_factor-30-max_epoch-300-max_edge_age-20-date-2020-07-16-09-57-08/gng300.pickle"
     #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-00-36-05/prm.pickle"
     prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-07-23-10-24-00/prm.pickle"
+    prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-08-12-33-58/prm.pickle"
+    prm_dense_path = "output/max_nodes-5000-k_nearest-7-connection_radius-5.0-date-2020-10-08-21-14-31/prm.pickle"
     prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-08-14-15-42-16/prm.pickle"
-    prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-08-02-43-53/prm.pickle"
-
+    prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-08-13-22-28/prm.pickle"
+    #prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-19-39/prm.pickle"
     # for ICRA
     #gng_top_path = "../persistence/output/exp_factor-freiburg30-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-40-date-2020-09-29-10-44-35/gng200.pickle"
     #gng_path = "../persistence/output/exp_factor-freiburg30-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-40-date-2020-09-29-11-29-07/gng200.pickle"
@@ -186,19 +207,19 @@ if __name__ == "__main__":
     gng_top_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-08-01-44-11/gng400.pickle"
     gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-40-date-2020-09-30-14-29-54/gng400.pickle"
     gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-07-02-50-39/gng400.pickle"
-    gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-50-date-2020-10-07-13-17-52/gng400.pickle"
+    #gng_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-50-date-2020-10-07-13-17-52/gng400.pickle"
     prm_path = "output/max_nodes-1000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-25-25/prm.pickle"
 
     #prm_dense_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-53-33/prm.pickle"
     # substituting ground truth with topological feedback
     gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-07-02-36-23/gng400.pickle"
     gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-70-date-2020-10-08-01-30-10/gng400.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-50-date-2020-10-08-02-16-58/gng400.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-100-date-2020-10-08-02-25-27/gng400.pickle"
-    prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-19-39/prm.pickle"
+    #gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-50-date-2020-10-08-02-16-58/gng400.pickle"
+    #gng_top_feedback_path = "../persistence/output/exp_factor-freiburg20-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-100-date-2020-10-08-02-25-27/gng400.pickle"
+    # prm_dense_hilbert_path = "output/max_nodes-4000-k_nearest-7-connection_radius-5.0-date-2020-10-01-12-19-39/prm.pickle"
     #with open("test_samples/freiburg_test_data1_thesis.pickle", 'rb') as tf:
     #    test_data = pickle.load(tf)
-    with open("test_samples/freiburg_hilbert_map.pickle", 'rb') as tf:
+    with open("test_samples/freiburg_hilbert_maptest.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
     start_list = test_data[1]
@@ -218,6 +239,7 @@ if __name__ == "__main__":
         else:  # roadmap == "prm_dense":
             prm_graph = load_graph(prm_dense_path)
 
+        path_sets = []
         success_list = []
         node_explored_list = []
         distance_to_goal_list = []
@@ -225,11 +247,10 @@ if __name__ == "__main__":
             eval_iterator = range(len(goal_list))
         else:
             eval_iterator = test_list
-
         for lamda_ in eval_iterator:
             goal_loc = goal_list[lamda_]
             start_loc = start_list[lamda_]
-            if roadmap == "gng" or roadmap == "gng_top" or roadmap == "gng_top_feedback" or roadmap == "prm" or roadmap == "prm_dense_hilbert":
+            if roadmap == "gng" or roadmap == "gng_top" or roadmap == "gng_top_feedback" or roadmap == "prm" or roadmap == "prm_dense_hilbert" or roadmap == "prm_dense":
                 full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, map_array)
             else:
                 full_graph = add_start_n_goal_to_graph(prm_graph.copy(), start_loc, goal_loc, save_pickle, ground_map_array)
@@ -253,7 +274,7 @@ if __name__ == "__main__":
                 success_list.append(False)
                 node_explored_list.append(None)
                 distance_to_goal_list.append(None)
-
+            path_sets.append(path_nodes)
             if not save_pickle:
                 if roadmap == "prm_dense":
                     save_img(ground_map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
@@ -261,7 +282,7 @@ if __name__ == "__main__":
                 else:
                     save_img(map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
                            path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False)
-
+        #plot_all_paths(map_data, path_sets, full_graph)
         print("############## for ", roadmap)
         print("success trial", np.sum(success_list))
         print("success_list:", success_list)

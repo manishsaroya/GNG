@@ -4,7 +4,7 @@ Contact: saroyam@oregonstate.edu
 """
 import networkx as nx
 import numpy as np
-from persistence.utils import load_hilbert_map, convert_map_dict_to_array
+from persistence.utils import load_hilbert_map, convert_map_dict_to_array, collision_check
 import matplotlib.pyplot as pl
 from sklearn.neighbors import NearestNeighbors
 from bresenham import bresenham
@@ -56,31 +56,12 @@ def hilbert_samples(map_data, exp_factor, num_samples=600):
 	return samples_list
 
 
-def collision_check(map_array, pos1, pos2, obstacle_threshold, resolution):
-	"""
-	Collision checker function between pos1 and pose2 via bresenham pixel selection
-	:param map_array: map data in array form
-	:param pos1: position of point1
-	:param pos2: position of point2
-	:param obstacle_threshold: obstacle threshold
-	:return: Bool value true if clear path exist
-	"""
-	# convert pos1 and pose2 in indices
-	ipos1 = [int(pos1[0] * (1 / resolution) + 160), int(pos1[1] * (1 / resolution) + 160)]
-	ipos2 = [int(pos2[0] * (1 / resolution) + 160), int(pos2[1] * (1 / resolution) + 160)]
-	check_list = list(bresenham(ipos1[0], ipos1[1], ipos2[0], ipos2[1]))
-	for cell in check_list:
-		if map_array[cell[0]][cell[1]] > obstacle_threshold and (not np.isnan(map_array[cell[0]][cell[1]])):
-			return False
-	return True
-
-
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--number_of_samples', type=int, default=10000)
-	parser.add_argument('--exp_factor', type=int, default=30)
-	parser.add_argument('--obstacle_threshold', type=float, default=0.4)
-	parser.add_argument('--max_nodes', type=int, default=2000)
+	parser.add_argument('--number_of_samples', type=int, default=15000)
+	parser.add_argument('--exp_factor', type=int, default=20)
+	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
+	parser.add_argument('--max_nodes', type=int, default=5000)
 	parser.add_argument('--k_nearest', type=int, default=7)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
@@ -93,11 +74,12 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	# load map
-	map_data, resolution = load_hilbert_map(map_type="intel")
-	resolution = 0.3
-	#with open("ground_map_q_resolution.pickle", 'rb') as tf:
+	map_data, resolution = load_hilbert_map(map_type="freiburg")
+	#resolution = 0.2
+	#with open("freiburg_ground_map_q_resolution_final.pickle", 'rb') as tf:
 	#	map_data = pickle.load(tf)
 	map_array = convert_map_dict_to_array(map_data, resolution)
+	map_data["yq"] = 1.0 * (map_data["yq"] > args.obstacle_threshold)
 	# get samples from hilbert maps
 	sample_list = hilbert_samples(map_data.copy(), args.exp_factor, num_samples=args.number_of_samples)
 	# take unique samples

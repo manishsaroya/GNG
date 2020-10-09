@@ -53,7 +53,7 @@ def get_top_n_persistence_node_location(n, map_type, location_type="death", feat
     if feature_type == 0:
         remove_indices = []
         for i in range(len(first_persistence)):
-            if first_persistence[i][1] > 0.4:
+            if first_persistence[i][1] > 0.50:
                 remove_indices.append(i)
         first_persistence = np.delete(first_persistence, remove_indices, 0)
         # remove feature ending after 0.4
