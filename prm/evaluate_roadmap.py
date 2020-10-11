@@ -172,7 +172,7 @@ if __name__ == "__main__":
     #exp_factor = 30
     used_stored_samples = True
     save_pickle = True
-    test_list = [61] #, 66, 95, 147, 198, 260, 265, 290, 331, 341, 349, 354, 377, 394] #[131, 305, 358, 386, 394, 456] #[202, 332, 367]
+    test_list = [4] #, 66, 95, 147, 198, 260, 265, 290, 331, 341, 349, 354, 377, 394] #[131, 305, 358, 386, 394, 456] #[202, 332, 367]
     obstacle_threshold = 0.45
 
     # TODO: Finalize map to be used as of now using new map
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     roadmap_types = ["gng", "gng_top", "gng_top_feedback", "prm", "prm_dense_hilbert", "prm_dense"]
     #roadmap_types = ["gng_top", "gng", "prm", "prm_dense_hilbert", "prm_dense"]
-    roadmap_types = ["gng_top_feedback"]
+    #roadmap_types = ["gng_top_feedback"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
@@ -204,20 +204,17 @@ if __name__ == "__main__":
     gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-45-21/gng300.pickle"
     gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-37-29/gng300.pickle"
     """
+    """
+    #FHW Map
+    # Map query points saved in fhw.pickle
     prm_dense_path = "output/max_nodes-fhw4000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-38-06/prm.pickle"
     prm_dense_hilbert_path = "output/max_nodes-fhw2000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-51-45/prm.pickle"
     prm_path = "output/max_nodes-fhw1000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-53-23/prm.pickle"
-    # Param 1
-    # gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-34-58/gng300.pickle"
-    # gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-19-05/gng300.pickle"
-    # gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.78-max_epoch-400-max_edge_age-60-date-2020-10-10-21-35-48/gng300.pickle"
-    # Param 2
+
     gng_top_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-53-40/gng400.pickle"
-    gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-11-01-43-48/gng300.pickle"
     gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-36-54/gng400.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-11-02-04-24/gng300.pickle"
     gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-16-23/gng400.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-500-max_edge_age-56-date-2020-10-11-04-03-24/gng400.pickle"
+    """
     with open("test_samples/fhw.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
