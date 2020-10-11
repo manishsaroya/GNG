@@ -42,7 +42,7 @@ def draw_image(data,resolution, dir, fignum, graph=None, persistence_birthnode=N
 	plt.axis("equal")
 	#plt.style.use('seaborn-dark')
 	#plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=(70/0.3) * resolution*0.2, vmin=0, vmax=1, edgecolors='')
-	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=10, edgecolors='')
+	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=10, vmin=0, vmax=1, edgecolors='')
 	plt.colorbar(fraction= 0.047, pad=0.02)
 	if graph is not None:
 		for node_1, node_2 in graph.edges:
@@ -66,10 +66,10 @@ def draw_image(data,resolution, dir, fignum, graph=None, persistence_birthnode=N
 	# plt.show()
 
 
-def normalize(data, exp_factor=20):
+def normalize(data, obs_threshold, exp_factor=20):
 	# toggle the probabilities
 	data['yq'] = np.ones(len(data['yq'])) - data['yq']
-	data["yq"][data["yq"] < 0.5] = 0
+	data["yq"][data["yq"] < (1-obs_threshold)] = 0
 	#data['yq'] = np.exp(exp_factor * data['yq'])
 	# normalize the probabilities
 	data['yq'] /= np.linalg.norm(data['yq'], ord=1)
@@ -91,11 +91,11 @@ def plot_loss(train_error_mean, train_error_std, dir):
 	plt.savefig(dir + "training_error.png")
 
 
-def get_multi_gauss_samples(local_map_data, persistence_loc, exp_factor, std_dev_):
+def get_multi_gauss_samples(local_map_data, persistence_loc, exp_factor, obs_threshold, std_dev_):
 	sample_list = []
 	for i in range(2):
 		small_list = get_samples(local_map_data.copy(),
-								 persistence_loc[np.random.randint(0, len(persistence_loc))], exp_factor,
+								 persistence_loc[np.random.randint(0, len(persistence_loc))], exp_factor, obs_threshold,
 								 scale=std_dev_, num_samples=int(600 / 2))
 		sample_list.extend(small_list)
 	return sample_list
@@ -135,17 +135,17 @@ if __name__ == "__main__":
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor', type=int, default=9)
 	parser.add_argument('--max_edge_age', type=int, default=56)
-	parser.add_argument('--max_epoch', type=int, default=300)
+	parser.add_argument('--max_epoch', type=int, default=500)
 	parser.add_argument('--max_nodes', type=int, default=1000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--local_distance', type=float, default=5.0)
 	parser.add_argument('--local_distance_0hom', type=float, default=1.1)
-	parser.add_argument('--is_bias_sampling', type=bool, default=False)
-	parser.add_argument('--is_topology_feedback', type=bool, default=False)
+	parser.add_argument('--is_bias_sampling', type=bool, default=True)
+	parser.add_argument('--is_topology_feedback', type=bool, default=True)
 	parser.add_argument('--bias_ratio', type=float, default=0.75)
-	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
-	parser.add_argument('--map_type', type=str, default="freiburg")
+	parser.add_argument('--obstacle_threshold', type=float, default=0.45)
+	parser.add_argument('--map_type', type=str, default="fhw")
 	args = parser.parse_args()
 
 	args.log_dir = './output/exp_factor-' + args.map_type + str(args.exp_factor) + "-is-topology-feedback-" + \
@@ -158,18 +158,23 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	data, resolution = load_hilbert_map(map_type=args.map_type)
-	#data["yq"] = 1.0 * (data["yq"] > 0.5)
+	#data["yq"] = 1.0 * (data["yq"] > 0.45)
 	map_array = convert_map_dict_to_array(data, resolution)
 	plt.imshow(map_array)
 	plt.show()
-	persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
-																  location_type="death", feature_type=0)
-	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
-																  location_type="death", feature_type=1)
+	# persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type, args.obstacle_threshold,
+	# 															  location_type="death", feature_type=0)
+	# persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type, args.obstacle_threshold,
+	# 															  location_type="death", feature_type=1)
 
+	# with open('fhw_persistence.pickle', 'wb') as handle:
+	# 	pickle.dump([persistence_birth_nodes, persistence_weights, persistence_1hom_nodes, persistence_1hom_weights], handle)
+
+	with open('fhw_persistence.pickle', 'rb') as tf:
+		persistence_birth_nodes, persistence_weights, persistence_1hom_nodes, persistence_1hom_weights  = pickle.load(tf)
 
 	original_data = data.copy()
-	data = normalize(data, args.exp_factor)
+	data = normalize(data, args.obstacle_threshold, args.exp_factor)
 	#draw_image(data, resolution, args.log_dir, 2, show=True)
 	#exit()
 	# hello world
@@ -198,7 +203,7 @@ if __name__ == "__main__":
 							del features[i]
 
 					if len(features):
-						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, 1.2)
+						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, args.obstacle_threshold, 1.2)
 						#samples_plot(original_data, sample_list, epoch, args.log_dir)
 					else:
 						print("ALL CONNECTIONS RESOLVED, UNIFORM SAMPLING FOR THIS EPOCH")
@@ -221,7 +226,7 @@ if __name__ == "__main__":
 					# get_important_regions(gng, persistence_1hom_nodes)
 
 					if len(features):
-						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, 2.5)
+						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, args.obstacle_threshold, 2.5)
 						#samples_plot(original_data, sample_list, epoch, args.log_dir)
 					else:
 						print("ALL LOOPS RESOLVED, UNIFORM SAMPLING FOR THIS EPOCH")

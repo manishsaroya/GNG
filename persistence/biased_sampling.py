@@ -41,7 +41,7 @@ def samples_plot(data, samples, fignum, dir, show=False):
 		plt.savefig(dir + "samples{}.png".format(fignum))
 	plt.clf()
 
-def get_samples(map_data, pose, exp_factor, scale=1, num_samples=600):
+def get_samples(map_data, pose, exp_factor, obs_threshold, scale=1, num_samples=600):
 	"""
 	:param exp_factor: exponential factor
 	:param map_data: map info
@@ -53,7 +53,7 @@ def get_samples(map_data, pose, exp_factor, scale=1, num_samples=600):
 	rv = multivariate_normal(pose, [[scale**2, 0.], [0., scale**2]])
 
 	map_data['yq'] = np.ones(len(map_data['yq'])) - map_data['yq']
-	map_data["yq"][map_data["yq"] < 0.5] = 0
+	map_data["yq"][map_data["yq"] < (1-obs_threshold)] = 0
 	#map_data['yq'] = np.exp(exp_factor * map_data['yq'])
 
 	for index in range(len(map_data["yq"])):

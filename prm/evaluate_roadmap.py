@@ -62,7 +62,7 @@ def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir
     fig = pl.figure(figsize=(40/4, 35/4))
     ax = fig.add_subplot(111)
     pl.axis("equal")
-    pl.ylim(-20, 10)
+    #pl.ylim(-20, 10)
     pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap=figure_cmap, s=10, vmin=0, vmax=1, edgecolors='')
     pl.colorbar(fraction= 0.047, pad=0.02)
     position = nx.get_node_attributes(graph, 'pos')
@@ -171,13 +171,13 @@ def add_start_n_goal_to_graph(nxgraph, start_loc, goal_loc, save_pickle, map_arr
 if __name__ == "__main__":
     #exp_factor = 30
     used_stored_samples = True
-    save_pickle = False
+    save_pickle = True
     test_list = [61] #, 66, 95, 147, 198, 260, 265, 290, 331, 341, 349, 354, 377, 394] #[131, 305, 358, 386, 394, 456] #[202, 332, 367]
-    obstacle_threshold = 0.5
+    obstacle_threshold = 0.45
 
     # TODO: Finalize map to be used as of now using new map
     # load map
-    map_data, resolution = load_hilbert_map(map_type="freiburg")
+    map_data, resolution = load_hilbert_map(map_type="fhw")
     map_array = convert_map_dict_to_array(map_data, resolution)
 
     ground_map_data = map_data.copy()
@@ -185,11 +185,11 @@ if __name__ == "__main__":
 
     roadmap_types = ["gng", "gng_top", "gng_top_feedback", "prm", "prm_dense_hilbert", "prm_dense"]
     #roadmap_types = ["gng_top", "gng", "prm", "prm_dense_hilbert", "prm_dense"]
-    #roadmap_types = ["prm_dense_hilbert"]
+    roadmap_types = ["gng_top_feedback"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
-
+    """
     # Freiburgh Map
     # Map points: test_samples/freiburg_hilbert_maptest1.pickle
     prm_dense_path = "output/max_nodes-freiburg4000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-31-27/prm.pickle"
@@ -203,8 +203,22 @@ if __name__ == "__main__":
     gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-41-43/gng300.pickle"
     gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-45-21/gng300.pickle"
     gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-37-29/gng300.pickle"
-
-    with open("test_samples/freiburg_hilbert_maptest1.pickle", 'rb') as tf:
+    """
+    prm_dense_path = "output/max_nodes-fhw4000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-38-06/prm.pickle"
+    prm_dense_hilbert_path = "output/max_nodes-fhw2000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-51-45/prm.pickle"
+    prm_path = "output/max_nodes-fhw1000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-53-23/prm.pickle"
+    # Param 1
+    # gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-34-58/gng300.pickle"
+    # gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-19-05/gng300.pickle"
+    # gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.78-max_epoch-400-max_edge_age-60-date-2020-10-10-21-35-48/gng300.pickle"
+    # Param 2
+    gng_top_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-53-40/gng400.pickle"
+    gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-11-01-43-48/gng300.pickle"
+    gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-36-54/gng400.pickle"
+    gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-11-02-04-24/gng300.pickle"
+    gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-16-23/gng400.pickle"
+    gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-500-max_edge_age-56-date-2020-10-11-04-03-24/gng400.pickle"
+    with open("test_samples/fhw.pickle", 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
     start_list = test_data[1]

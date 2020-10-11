@@ -10,7 +10,8 @@ if __name__ == "__main__":
     # load map
     #with open("freiburg_ground_map_q_resolution_final.pickle", 'rb') as tf:
     #    map_data = pickle.load(tf)
-    map_data, resolution = load_hilbert_map("freiburg")
+    obstacle_threshold = 0.45
+    map_data, resolution = load_hilbert_map("fhw")
     #map_data["yq"] = 1.0 * (map_data["yq"] > 0.45)
     fig = plt.figure(figsize=(40 / 4, 35 / 4))
     plt.axis("equal")
@@ -19,8 +20,8 @@ if __name__ == "__main__":
     #plt.scatter(map_data['Xq'][:, 0], map_data['Xq'][:, 1], c=map_data['yq'], s=10, vmin=0, vmax=1, edgecolors='')
     plt.colorbar(fraction=0.047, pad=0.02)
     plt.show()
-    goal_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
-    start_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
+    goal_list = hilbert_samples(map_data.copy(), 10, obstacle_threshold, num_samples=500)
+    start_list = hilbert_samples(map_data.copy(), 10, obstacle_threshold, num_samples=500)
 
-    with open("test_samples/" + 'freiburg_hilbert_maptest1.pickle', 'wb') as handle:
+    with open("test_samples/" + 'fhw.pickle', 'wb') as handle:
         pickle.dump([goal_list, start_list], handle)
