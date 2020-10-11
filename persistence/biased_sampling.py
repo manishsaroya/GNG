@@ -53,8 +53,8 @@ def get_samples(map_data, pose, exp_factor, scale=1, num_samples=600):
 	rv = multivariate_normal(pose, [[scale**2, 0.], [0., scale**2]])
 
 	map_data['yq'] = np.ones(len(map_data['yq'])) - map_data['yq']
-
-	map_data['yq'] = np.exp(exp_factor * map_data['yq'])
+	map_data["yq"][map_data["yq"] < 0.5] = 0
+	#map_data['yq'] = np.exp(exp_factor * map_data['yq'])
 
 	for index in range(len(map_data["yq"])):
 		map_data["yq"][index] *= rv.pdf(map_data["Xq"][index])

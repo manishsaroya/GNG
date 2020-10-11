@@ -40,9 +40,9 @@ def create_gng(max_nodes, step=0.2, n_start_nodes=2, max_edge_age=50):
 def draw_image(data,resolution, dir, fignum, graph=None, persistence_birthnode=None, persistence_1homnode=None, samples=None, show=True):
 	fig = plt.figure(figsize=(40/4, 35/4))
 	plt.axis("equal")
-	plt.style.use('seaborn-dark')
+	#plt.style.use('seaborn-dark')
 	#plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap="jet", s=(70/0.3) * resolution*0.2, vmin=0, vmax=1, edgecolors='')
-	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=10, vmin=0, vmax=1, edgecolors='')
+	plt.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], s=10, edgecolors='')
 	plt.colorbar(fraction= 0.047, pad=0.02)
 	if graph is not None:
 		for node_1, node_2 in graph.edges:
@@ -69,7 +69,8 @@ def draw_image(data,resolution, dir, fignum, graph=None, persistence_birthnode=N
 def normalize(data, exp_factor=20):
 	# toggle the probabilities
 	data['yq'] = np.ones(len(data['yq'])) - data['yq']
-	data['yq'] = np.exp(exp_factor * data['yq'])
+	data["yq"][data["yq"] < 0.5] = 0
+	#data['yq'] = np.exp(exp_factor * data['yq'])
 	# normalize the probabilities
 	data['yq'] /= np.linalg.norm(data['yq'], ord=1)
 	return data
@@ -132,21 +133,23 @@ def get_important_regions(g, regions):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
-	parser.add_argument('--exp_factor', type=int, default=20)
-	parser.add_argument('--max_edge_age', type=int, default=70)
-	parser.add_argument('--max_epoch', type=int, default=400)
+	parser.add_argument('--exp_factor', type=int, default=9)
+	parser.add_argument('--max_edge_age', type=int, default=56)
+	parser.add_argument('--max_epoch', type=int, default=300)
 	parser.add_argument('--max_nodes', type=int, default=1000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--local_distance', type=float, default=5.0)
 	parser.add_argument('--local_distance_0hom', type=float, default=1.1)
-	parser.add_argument('--is_bias_sampling', type=bool, default=True)
+	parser.add_argument('--is_bias_sampling', type=bool, default=False)
+	parser.add_argument('--is_topology_feedback', type=bool, default=False)
 	parser.add_argument('--bias_ratio', type=float, default=0.75)
 	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
 	parser.add_argument('--map_type', type=str, default="freiburg")
 	args = parser.parse_args()
 
-	args.log_dir = './output/exp_factor-' + args.map_type + str(args.exp_factor) + "-is-bias-sampling-" + \
+	args.log_dir = './output/exp_factor-' + args.map_type + str(args.exp_factor) + "-is-topology-feedback-" + \
+				   str(args.is_topology_feedback) + "-is-bias-sampling-" + \
 				   str(args.is_bias_sampling) + "-bias_ratio-" + str(args.bias_ratio) +"-max_epoch-" + \
 				   str(args.max_epoch) + "-max_edge_age-" + str(args.max_edge_age) + "-date-" + \
 				   datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '/'
@@ -155,23 +158,23 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	data, resolution = load_hilbert_map(map_type=args.map_type)
+	#data["yq"] = 1.0 * (data["yq"] > 0.5)
 	map_array = convert_map_dict_to_array(data, resolution)
-	#plt.imshow(map_array)
-	#plt.show()
+	plt.imshow(map_array)
+	plt.show()
 	persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
 																  location_type="death", feature_type=0)
 	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type,
 																  location_type="death", feature_type=1)
-	#persistence_weights /= np.linalg.norm(persistence_weights, ord=1)
-	# iter_list = get_samples(data.copy(), persistence[2], scale=2, num_samples=600)
-	# samples_plot(samples)
+
+
 	original_data = data.copy()
 	data = normalize(data, args.exp_factor)
-
+	#draw_image(data, resolution, args.log_dir, 2, show=True)
+	#exit()
 	# hello world
 	draw_image(original_data, resolution, args.log_dir, 2, persistence_birthnode=persistence_birth_nodes, \
 			   persistence_1homnode=persistence_1hom_nodes, show=True)
-	#exit()
 	# GNG learning code
 	utils.reproducible()
 	gng = create_gng(args.max_nodes, max_edge_age=args.max_edge_age)
@@ -179,10 +182,6 @@ if __name__ == "__main__":
 	train_error_mean = []
 	train_error_std = []
 	for epoch in range(args.max_epoch + 1):
-		# if epoch / args.max_epoch >= 0.9:
-		# 	sample_list = get_samples(original_data.copy(), persistence_birth_nodes[epoch%10], scale=1.5, num_samples=600)
-		# else:
-		#get_important_regions(gng, persistence_1hom_nodes)
 		if args.is_bias_sampling and epoch > 70:
 			if np.random.uniform(0, 1) < args.bias_ratio:
 				sample_list = data['Xq'][np.random.choice(len(data['Xq']), size=600, p=data['yq'])]
@@ -190,15 +189,16 @@ if __name__ == "__main__":
 				print("biasing epoch", epoch)
 				if np.random.uniform(0,1) > 0.5:
 					features = persistence_birth_nodes.copy()
-					gng_nx = convert_gng_to_nxgng(gng, map_array, args.obstacle_threshold, resolution)
-					accuracy = get_0hom_topological_accuracy(gng_nx, features, args.local_distance_0hom)
-					accuracy_indices = [i for i, val in enumerate(accuracy) if val]
-					print("connected", accuracy_indices)
-					for i in sorted(accuracy_indices, reverse=True):
-						del features[i]
+					if args.is_topology_feedback:
+						gng_nx = convert_gng_to_nxgng(gng, map_array, args.obstacle_threshold, resolution)
+						accuracy = get_0hom_topological_accuracy(gng_nx, features, args.local_distance_0hom)
+						accuracy_indices = [i for i, val in enumerate(accuracy) if val]
+						print("connected", accuracy_indices)
+						for i in sorted(accuracy_indices, reverse=True):
+							del features[i]
 
 					if len(features):
-						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, 1.1)
+						sample_list = get_multi_gauss_samples(original_data.copy(), features, args.exp_factor, 1.2)
 						#samples_plot(original_data, sample_list, epoch, args.log_dir)
 					else:
 						print("ALL CONNECTIONS RESOLVED, UNIFORM SAMPLING FOR THIS EPOCH")
@@ -207,12 +207,13 @@ if __name__ == "__main__":
 					#samples_plot(original_data, sample_list, epoch, args.log_dir)
 				else:
 					features = persistence_1hom_nodes.copy()
-					gng_nx = convert_gng_to_nxgng(gng, map_array, args.obstacle_threshold, resolution)
-					accuracy = get_topological_accuracy(gng_nx, features, args.local_distance)
-					accuracy_indices = [i for i, val in enumerate(accuracy) if val]
-					print(accuracy_indices)
-					for i in sorted(accuracy_indices, reverse=True):
-						del features[i]
+					if args.is_topology_feedback:
+						gng_nx = convert_gng_to_nxgng(gng, map_array, args.obstacle_threshold, resolution)
+						accuracy = get_topological_accuracy(gng_nx, features, args.local_distance)
+						accuracy_indices = [i for i, val in enumerate(accuracy) if val]
+						print(accuracy_indices)
+						for i in sorted(accuracy_indices, reverse=True):
+							del features[i]
 
 					# draw_image(original_data, resolution, args.log_dir, epoch, graph=gng.graph,
 					# 		   persistence_birthnode=persistence_birth_nodes, \
