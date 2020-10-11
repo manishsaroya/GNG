@@ -47,8 +47,8 @@ def hilbert_samples(map_data, exp_factor, num_samples=600):
 	:return: samples
 	"""
 	map_data['yq'] = np.ones(len(map_data['yq'])) - map_data['yq']
-	map_data['yq'] = np.exp(exp_factor * map_data['yq'])
-
+	#map_data['yq'] = np.exp(exp_factor * map_data['yq'])
+	map_data["yq"][map_data["yq"] < 0.5] = 0
 	# normalize the probabilities
 	map_data['yq'] /= np.linalg.norm(map_data['yq'], ord=1)
 
@@ -61,12 +61,14 @@ if __name__ == "__main__":
 	parser.add_argument('--number_of_samples', type=int, default=15000)
 	parser.add_argument('--exp_factor', type=int, default=20)
 	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
-	parser.add_argument('--max_nodes', type=int, default=5000)
+	parser.add_argument('--max_nodes', type=int, default=2000)
 	parser.add_argument('--k_nearest', type=int, default=7)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
+	parser.add_argument('--map_type', type=str, default="freiburg")
 	args = parser.parse_args()
-	args.log_dir = './output/max_nodes-' + str(args.max_nodes) + "-k_nearest-" + \
+	args.log_dir = './output/max_nodes-' + args.map_type + str(args.max_nodes) + "-obs-thres" + str(args.obstacle_threshold) +\
+				   "-k_nearest-" + \
 				   str(args.k_nearest) + "-connection_radius-" + str(args.connection_radius) + "-date-" + \
 				   datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + '/'
 
@@ -74,7 +76,7 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	# load map
-	map_data, resolution = load_hilbert_map(map_type="freiburg")
+	map_data, resolution = load_hilbert_map(map_type=args.map_type)
 	#resolution = 0.2
 	#with open("freiburg_ground_map_q_resolution_final.pickle", 'rb') as tf:
 	#	map_data = pickle.load(tf)

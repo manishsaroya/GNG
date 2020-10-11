@@ -11,7 +11,7 @@ if __name__ == "__main__":
     #with open("freiburg_ground_map_q_resolution_final.pickle", 'rb') as tf:
     #    map_data = pickle.load(tf)
     map_data, resolution = load_hilbert_map("freiburg")
-    map_data["yq"] = 1.0 * (map_data["yq"] > 0.5)
+    #map_data["yq"] = 1.0 * (map_data["yq"] > 0.45)
     fig = plt.figure(figsize=(40 / 4, 35 / 4))
     plt.axis("equal")
     #plt.style.use('seaborn-dark')
@@ -22,5 +22,5 @@ if __name__ == "__main__":
     goal_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
     start_list = hilbert_samples(map_data.copy(), 30, num_samples=500)
 
-    with open("test_samples/" + 'freiburg_hilbert_maptest.pickle', 'wb') as handle:
+    with open("test_samples/" + 'freiburg_hilbert_maptest1.pickle', 'wb') as handle:
         pickle.dump([goal_list, start_list], handle)

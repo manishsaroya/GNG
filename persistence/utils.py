@@ -41,6 +41,15 @@ def load_hilbert_map(map_type='intel'):
 		mapdata['Xq'] = mapdata['X']
 		mapdata['yq'] = mapdata['Y']
 		# pdb.set_trace()
+	elif my_map == "fhw":
+		resolution = 0.2
+		with open('./../dataset/mapdata_{}.pickle'.format(499), 'rb') as tf:
+			# with open('./dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
+			mapdata = pickle.load(tf)
+		# convert to numpy
+		mapdata['Xq'] = mapdata['X']
+		mapdata['yq'] = mapdata['Y']
+		# pdb.set_trace()
 	else:
 		resolution = 0.3
 		with open('./../dataset/mapdata_{}.pickle'.format(908), 'rb') as tf:
@@ -70,9 +79,9 @@ def convert_map_dict_to_array(map_dict, resolution):
     Note: Hard code for resolution 0.5 and map (-80,80)
     """
 	# resolution = 0.3
-	map_array = np.zeros([320, 320]) + 0.5
+	map_array = np.zeros([600, 600]) + 0.5
 	for indx, point in enumerate(map_dict['Xq']):
-		map_array[int(point[0] * (1 / resolution) + 160)][int(point[1] * (1 / resolution) + 160)] = map_dict['yq'][indx]
+		map_array[int(point[0] * (1 / resolution) + 300)][int(point[1] * (1 / resolution) + 300)] = map_dict['yq'][indx]
 	return map_array
 
 
@@ -86,8 +95,8 @@ def collision_check(map_array, pos1, pos2, obstacle_threshold, resolution):
 	:return: Bool value true if clear path exist
 	"""
 	# convert pos1 and pose2 in indices
-	ipos1 = [int(pos1[0] * (1 / resolution) + 160), int(pos1[1] * (1 / resolution) + 160)]
-	ipos2 = [int(pos2[0] * (1 / resolution) + 160), int(pos2[1] * (1 / resolution) + 160)]
+	ipos1 = [int(pos1[0] * (1 / resolution) + 300), int(pos1[1] * (1 / resolution) + 300)]
+	ipos2 = [int(pos2[0] * (1 / resolution) + 300), int(pos2[1] * (1 / resolution) + 300)]
 	check_list = list(bresenham(ipos1[0], ipos1[1], ipos2[0], ipos2[1]))
 	for cell in check_list:
 		if map_array[cell[0]][cell[1]] > obstacle_threshold and (not np.isnan(map_array[cell[0]][cell[1]])):
@@ -108,8 +117,8 @@ def create_intensity_graph(_graph, graph_type):
 	intensity = {}
 	# resolution = 0.3
 	for i in range(_graph.number_of_nodes()):
-		intensity[i] = map_array[int(position[i][0] * (1 / resolution)) + 160, int(
-			position[i][1] * (1 / resolution)) + 160]  # approx interpolation
+		intensity[i] = map_array[int(position[i][0] * (1 / resolution)) + 300, int(
+			position[i][1] * (1 / resolution)) + 300]  # approx interpolation
 	nx.set_node_attributes(_graph, intensity, "intensity")
 	return _graph, map_dict
 
