@@ -134,18 +134,18 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--runs', type=int, default=1)
 	parser.add_argument('--exp_factor', type=int, default=9)
-	parser.add_argument('--max_edge_age', type=int, default=56)
-	parser.add_argument('--max_epoch', type=int, default=500)
+	parser.add_argument('--max_edge_age', type=int, default=70)
+	parser.add_argument('--max_epoch', type=int, default=300)
 	parser.add_argument('--max_nodes', type=int, default=1000)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--top_n_persistence', type=int, default=25)
 	parser.add_argument('--local_distance', type=float, default=5.0)
 	parser.add_argument('--local_distance_0hom', type=float, default=1.1)
 	parser.add_argument('--is_bias_sampling', type=bool, default=True)
-	parser.add_argument('--is_topology_feedback', type=bool, default=True)
+	parser.add_argument('--is_topology_feedback', type=bool, default=False)
 	parser.add_argument('--bias_ratio', type=float, default=0.75)
-	parser.add_argument('--obstacle_threshold', type=float, default=0.45)
-	parser.add_argument('--map_type', type=str, default="fhw")
+	parser.add_argument('--obstacle_threshold', type=float, default=0.5)
+	parser.add_argument('--map_type', type=str, default="freiburg")
 	args = parser.parse_args()
 
 	args.log_dir = './output/exp_factor-' + args.map_type + str(args.exp_factor) + "-is-topology-feedback-" + \
@@ -158,20 +158,21 @@ if __name__ == "__main__":
 		os.makedirs(args.log_dir)
 
 	data, resolution = load_hilbert_map(map_type=args.map_type)
-	#data["yq"] = 1.0 * (data["yq"] > 0.45)
+	#data["yq"] = 1.0 * (data["yq"] > args.obstacle_threshold)
 	map_array = convert_map_dict_to_array(data, resolution)
 	plt.imshow(map_array)
 	plt.show()
-	# persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type, args.obstacle_threshold,
-	# 															  location_type="death", feature_type=0)
-	# persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type, args.obstacle_threshold,
-	# 															  location_type="death", feature_type=1)
-
+	#exit()
+	persistence_birth_nodes, persistence_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type, args.obstacle_threshold,
+																  location_type="death", feature_type=0)
+	persistence_1hom_nodes, persistence_1hom_weights = get_top_n_persistence_node_location(args.top_n_persistence, args.map_type, args.obstacle_threshold,
+																  location_type="death", feature_type=1)
+	#
 	# with open('fhw_persistence.pickle', 'wb') as handle:
 	# 	pickle.dump([persistence_birth_nodes, persistence_weights, persistence_1hom_nodes, persistence_1hom_weights], handle)
 
-	with open('fhw_persistence.pickle', 'rb') as tf:
-		persistence_birth_nodes, persistence_weights, persistence_1hom_nodes, persistence_1hom_weights  = pickle.load(tf)
+	# with open('fhw_persistence.pickle', 'rb') as tf:
+	# 	persistence_birth_nodes, persistence_weights, persistence_1hom_nodes, persistence_1hom_weights = pickle.load(tf)
 
 	original_data = data.copy()
 	data = normalize(data, args.obstacle_threshold, args.exp_factor)
@@ -180,6 +181,7 @@ if __name__ == "__main__":
 	# hello world
 	draw_image(original_data, resolution, args.log_dir, 2, persistence_birthnode=persistence_birth_nodes, \
 			   persistence_1homnode=persistence_1hom_nodes, show=True)
+
 	# GNG learning code
 	utils.reproducible()
 	gng = create_gng(args.max_nodes, max_edge_age=args.max_edge_age)

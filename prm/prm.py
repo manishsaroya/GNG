@@ -60,12 +60,12 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--number_of_samples', type=int, default=15000)
 	parser.add_argument('--exp_factor', type=int, default=20)
-	parser.add_argument('--obstacle_threshold', type=float, default=0.45)
-	parser.add_argument('--max_nodes', type=int, default=1000)
+	parser.add_argument('--obstacle_threshold', type=float, default=0.25)
+	parser.add_argument('--max_nodes', type=int, default=4000)
 	parser.add_argument('--k_nearest', type=int, default=7)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
-	parser.add_argument('--map_type', type=str, default="fhw")
+	parser.add_argument('--map_type', type=str, default="intel")
 	args = parser.parse_args()
 	args.log_dir = './output/max_nodes-' + args.map_type + str(args.max_nodes) + "-obs-thres" + str(args.obstacle_threshold) +\
 				   "-k_nearest-" + \

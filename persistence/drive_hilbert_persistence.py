@@ -50,6 +50,12 @@ def get_top_n_persistence_node_location(n, map_type, obs_threshold, location_typ
             print(i)
 
     first_persistence = st.persistence_intervals_in_dimension(feature_type)
+    if feature_type == 1:
+        remove_indices = []
+        for i in range(len(first_persistence)):
+            if first_persistence[i][0] > obs_threshold:
+                remove_indices.append(i)
+        first_persistence = np.delete(first_persistence, remove_indices, 0)
     if feature_type == 0:
         remove_indices = []
         for i in range(len(first_persistence)):
