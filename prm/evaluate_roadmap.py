@@ -52,44 +52,72 @@ def plot_all_paths(data, path_set, graph):
         #        pl.setp(line, linewidth=3, color='white')
     pl.show()
 
-def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir, fig_num=1, save_data=True, save_graph=True, figure_cmap="jet"):
+def save_img(data, graph,start_sample, start, goal_sample, goal, path_nodes, dir, fig_num=1, save_data=True, save_graph=True, figure_cmap="jet", map_type="intel"):
     """
     :param data: map data dictionary
     :param graph: prm nx graph
     :param dir: output directory path
     :return: save prm graph and visualization image to output directory
     """
-    fig = pl.figure(figsize=(40/4, 35/4))
-    ax = fig.add_subplot(111)
-    pl.axis("equal")
-    #pl.ylim(-20, 10)
-    pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap=figure_cmap, s=10, vmin=0, vmax=1, edgecolors='')
-    pl.colorbar(fraction= 0.047, pad=0.02)
-    position = nx.get_node_attributes(graph, 'pos')
-    # Plot the graph
-    for node_1, node_2 in graph.edges:
-        weights = np.concatenate([[position[node_1]], [position[node_2]]])
-        line, = pl.plot(*weights.T, color='lightsteelblue')
-        pl.setp(line, linewidth=2, color='lightsteelblue')
 
-    # plot start and goal
-    pl.scatter(start_sample[0], start_sample[1],s=90, marker='v', facecolors='cyan')
-    pl.scatter(goal_sample[0], goal_sample[1],s=90, marker='*', facecolors='cyan')
-    pl.scatter(position[start][0], position[start][1], s=90, marker='v', facecolors='yellow')
-    pl.scatter(position[goal][0], position[goal][1], s=90, marker='*', facecolors='yellow')
+    if map_type=="intel":
+        fig = pl.figure(figsize=(40/4, 35/4))
+        ax = fig.add_subplot(111)
+        pl.axis("equal")
+        pl.xlim(-11, 18)
+        pl.ylim(-23.5, 5.8)
+        pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap=figure_cmap, s=70, vmin=0, vmax=1, edgecolors='')
+    elif map_type=="fhw":
+        fig = pl.figure(figsize=(8.5, 2.93))
+        ax = fig.add_subplot(111)
+        pl.axis("equal")
+        pl.ylim(-5, 22)
+        pl.xlim(-25, 45)
+        pl.scatter(data['Xq'][:, 1], data['Xq'][:, 0], c=data['yq'], marker="s", cmap=figure_cmap, s=1.6, vmin=0, vmax=1,\
+                   edgecolors='')
+    else:
+        fig = pl.figure(figsize=(8, 3))
+        ax = fig.add_subplot(111)
+        pl.axis("equal")
 
-    # plot path
-    for path_n in path_nodes:
-        pl.scatter(position[path_n][0], position[path_n][1],s=40, marker='*', facecolors='red')
+        pl.xlim(-25.5, 17)
+        pl.ylim((-10, 10))
+        pl.scatter(data['Xq'][:, 0], data['Xq'][:, 1], c=data['yq'], cmap=figure_cmap, s=11, vmin=0, vmax=1, edgecolors='')
+    cbar = pl.colorbar(fraction= 0.067, pad=0.02)
+    cbar.set_label(label="Occupancy probability", size=20)
+    cbar.ax.tick_params(labelsize=12)
+    # position = nx.get_node_attributes(graph, 'pos')
+    # if map_type=="fhw":
+    #     swap_position = {}
+    #     for key, value in position.items():
+    #         swap_position[key] = (value[1], value[0])
+    #     position = swap_position
+    pl.xticks([],fontsize=11)
+    pl.yticks([],fontsize=11)
+    # # Plot the graph
+    # for node_1, node_2 in graph.edges:
+    #     weights = np.concatenate([[position[node_1]], [position[node_2]]])
+    #     line, = pl.plot(*weights.T, color='lightsteelblue')
+    #     pl.setp(line, linewidth=3, color='lightsteelblue')
+    #
+    # # plot start and goal
+    # pl.scatter(start_sample[0], start_sample[1],s=90, marker='v', facecolors='cyan')
+    # pl.scatter(goal_sample[0], goal_sample[1],s=90, marker='*', facecolors='cyan')
+    # pl.scatter(position[start][0], position[start][1], s=90, marker='v', facecolors='yellow')
+    # pl.scatter(position[goal][0], position[goal][1], s=90, marker='*', facecolors='yellow')
+    #
+    # # plot path
+    # for path_n in path_nodes:
+    #     pl.scatter(position[path_n][0], position[path_n][1],s=40, marker='*', facecolors='red')
+    #
+    # for i in range(len(path_nodes)-1):
+    #     weights = np.concatenate([[position[path_nodes[i]]], [position[path_nodes[i+1]]]])
+    #     line, = pl.plot(*weights.T, color='white')
+    #     pl.setp(line, linewidth=4.5, color='white')
 
-    for i in range(len(path_nodes)-1):
-        weights = np.concatenate([[position[path_nodes[i]]], [position[path_nodes[i+1]]]])
-        line, = pl.plot(*weights.T, color='white')
-        pl.setp(line, linewidth=3, color='white')
-
-
+    fig.tight_layout()
     if save_data:
-        pl.savefig(dir + "freiburg_prm{}.eps".format(fig_num))
+        pl.savefig(dir + "{}_prm{}.png".format(map_type, fig_num), dpi=100)
     if save_graph:
         with open(dir + 'freiburg_prm.pickle', 'wb') as handle:
             pickle.dump(graph, handle)
@@ -172,63 +200,70 @@ if __name__ == "__main__":
     #exp_factor = 30
     used_stored_samples = True
     save_pickle = True
-    test_list = [4] #, 66, 95, 147, 198, 260, 265, 290, 331, 341, 349, 354, 377, 394] #[131, 305, 358, 386, 394, 456] #[202, 332, 367]
-    obstacle_threshold = 0.25
+    map_type = "intel"
+    test_list = [0]#, 18, 29, 48, 49, 69, 89, 94, 95, 101, 106, 129, 131, 133, 159]
 
-    # TODO: Finalize map to be used as of now using new map
+
+    roadmap_types = ["gng", "gng_top", "gng_top_feedback", "prm", "prm_dense_hilbert", "prm_dense"]
+    #roadmap_types = ["gng_top_feedback"]
+    data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
+                     "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
+
+    obstacle_threshold = 0
+    query_path = ""
+    if map_type == "freiburg":
+        obstacle_threshold = 0.5
+        query_path = "freiburg_hilbert_maptest1.pickle"
+
+        prm_dense_path = "output/max_nodes-freiburg4000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-31-27/prm.pickle"
+        prm_dense_hilbert_path = "output/max_nodes-freiburg2000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-36-45/prm.pickle"
+        prm_path = "output/max_nodes-freiburg1000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-30-17/prm.pickle"
+        # Param 1
+        # gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-34-58/gng300.pickle"
+        # gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-19-05/gng300.pickle"
+        # gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.78-max_epoch-400-max_edge_age-60-date-2020-10-10-21-35-48/gng300.pickle"
+        # Param 2
+        gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-41-43/gng300.pickle"
+        gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-45-21/gng300.pickle"
+        gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-37-29/gng300.pickle"
+    elif map_type == "fhw":
+        obstacle_threshold = 0.45
+        query_path = "fhw.pickle"
+        #FHW Map
+        # Map query points saved in fhw.pickle
+        prm_dense_path = "output/max_nodes-fhw4000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-38-06/prm.pickle"
+        prm_dense_hilbert_path = "output/max_nodes-fhw2000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-51-45/prm.pickle"
+        prm_path = "output/max_nodes-fhw1000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-53-23/prm.pickle"
+
+        gng_top_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-53-40/gng400.pickle"
+        gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-36-54/gng400.pickle"
+        gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-16-23/gng400.pickle"
+    elif map_type == "intel":
+        obstacle_threshold = 0.25
+        query_path = "intel_crap.pickle"
+        # Intel Map
+        # Map query points test_samples/intel_crap.pickle
+        prm_dense_path = "output/max_nodes-intel4000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2020-10-11-15-03-54/prm.pickle"
+        prm_dense_hilbert_path = "output/max_nodes-intel2000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2020-10-11-15-02-45/prm.pickle"
+        prm_path = "output/max_nodes-intel1000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2020-10-11-15-00-52/prm.pickle"
+        #prm star
+        #prm_dense_path = "output/max_nodes-intel4000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2021-01-01-01-11-34/prm.pickle"
+        #prm_dense_hilbert_path = "output/max_nodes-intel2000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2021-01-01-00-46-34/prm.pickle"
+        #prm_path = "output/max_nodes-intel1000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2021-01-01-00-39-31/prm.pickle"
+
+        gng_top_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-70-date-2020-10-11-18-05-56/gng200.pickle"
+        gng_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-70-date-2020-10-11-18-01-43/gng200.pickle"
+        gng_top_feedback_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-70-date-2020-10-11-17-53-22/gng200.pickle"
+
     # load map
-    map_data, resolution = load_hilbert_map(map_type="intel")
+    map_data, resolution = load_hilbert_map(map_type=map_type)
     map_array = convert_map_dict_to_array(map_data, resolution)
 
     ground_map_data = map_data.copy()
     ground_map_data["yq"] = 1.0 * (ground_map_data["yq"] > obstacle_threshold)
 
-    roadmap_types = ["gng", "gng_top", "gng_top_feedback", "prm", "prm_dense_hilbert", "prm_dense"]
-    #roadmap_types = [ "prm", "prm_dense_hilbert", "prm_dense"]
-    #roadmap_types = ["gng", "gng_top", "gng_top_feedback"]
-    #roadmap_types = ["gng_top", "gng", "gng_top_feedback"]
-    data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
-                     "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
-    """
-    # Freiburgh Map
-    # Map points: test_samples/freiburg_hilbert_maptest1.pickle
-    prm_dense_path = "output/max_nodes-freiburg4000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-31-27/prm.pickle"
-    prm_dense_hilbert_path = "output/max_nodes-freiburg2000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-36-45/prm.pickle"
-    prm_path = "output/max_nodes-freiburg1000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-30-17/prm.pickle"
-    # Param 1
-    # gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-34-58/gng300.pickle"
-    # gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-19-05/gng300.pickle"
-    # gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.78-max_epoch-400-max_edge_age-60-date-2020-10-10-21-35-48/gng300.pickle"
-    # Param 2
-    gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-41-43/gng300.pickle"
-    gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-45-21/gng300.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-56-date-2020-10-10-23-37-29/gng300.pickle"
-    """
-    """
-    #FHW Map
-    # Map query points saved in fhw.pickle
-    prm_dense_path = "output/max_nodes-fhw4000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-38-06/prm.pickle"
-    prm_dense_hilbert_path = "output/max_nodes-fhw2000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-51-45/prm.pickle"
-    prm_path = "output/max_nodes-fhw1000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-53-23/prm.pickle"
-
-    gng_top_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-53-40/gng400.pickle"
-    gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-36-54/gng400.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-16-23/gng400.pickle"
-    """
-    prm_dense_path = "output/max_nodes-intel4000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2020-10-11-15-03-54/prm.pickle"
-    prm_dense_hilbert_path = "output/max_nodes-intel2000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2020-10-11-15-02-45/prm.pickle"
-    prm_path = "output/max_nodes-intel1000-obs-thres0.25-k_nearest-7-connection_radius-5.0-date-2020-10-11-15-00-52/prm.pickle"
-
-    gng_top_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-500-max_edge_age-56-date-2020-10-11-17-08-42/gng300.pickle"
-    gng_top_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-70-date-2020-10-11-18-05-56/gng200.pickle"
-    gng_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-500-max_edge_age-56-date-2020-10-11-15-46-32/gng300.pickle"
-    gng_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-300-max_edge_age-70-date-2020-10-11-18-01-43/gng200.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-500-max_edge_age-56-date-2020-10-11-15-27-01/gng400.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-500-max_edge_age-56-date-2020-10-11-17-17-26/gng150.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.78-max_epoch-300-max_edge_age-56-date-2020-10-11-17-30-49/gng200.pickle"
-    gng_top_feedback_path = "../persistence/output/exp_factor-intel9-is-topology-feedback-True-is-bias-sampling-True-bias_ratio-0.75-max_epoch-300-max_edge_age-70-date-2020-10-11-17-53-22/gng200.pickle"
-    with open("test_samples/intel_crap.pickle", 'rb') as tf:
+    with open("test_samples/{}".format(query_path), 'rb') as tf:
         test_data = pickle.load(tf)
     goal_list = test_data[0]
     start_list = test_data[1]
@@ -292,7 +327,7 @@ if __name__ == "__main__":
                              path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False, figure_cmap="viridis")
                 else:
                     save_img(map_data, full_graph, start_loc, start_node, goal_loc, goal_node,
-                           path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False)
+                           path_nodes, data_save_dic[roadmap], fig_num=lamda_, save_graph=False, map_type=map_type)
         #plot_all_paths(map_data, path_sets, full_graph)
         print("############## for ", roadmap)
         print("success trial", np.sum(success_list))
@@ -301,21 +336,21 @@ if __name__ == "__main__":
         print("distance to goal list", distance_to_goal_list)
         if save_pickle:
             if roadmap == "gng":
-                with open(data_save_dic[roadmap] + 'freiburg_gng1208_200.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + '{}_postgng1208_200.pickle'.format(map_type), 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "gng_top":
-                with open(data_save_dic[roadmap] + 'freiburg_gngtop_1208_200.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + '{}_postgngtop_1208_200.pickle'.format(map_type), 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "gng_top_feedback":
-                with open(data_save_dic[roadmap] + 'freiburg_gngtop_feedback_1208_200.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + '{}_postgngtop_feedback_1208_200.pickle'.format(map_type), 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "prm":
-                with open(data_save_dic[roadmap] + 'freiburg_prm1208.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + '{}_postprm1208.pickle'.format(map_type), 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "prm_dense":
-                with open(data_save_dic[roadmap] + 'freiburg_prmdense_2500.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + '{}_postprmdense_2500.pickle'.format(map_type), 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
             elif roadmap == "prm_dense_hilbert":
-                with open(data_save_dic[roadmap] + 'freiburg_prmdense_hilbert4000.pickle', 'wb') as handle:
+                with open(data_save_dic[roadmap] + '{}_postprmdense_hilbert4000.pickle'.format(map_type), 'wb') as handle:
                     pickle.dump([success_list,node_explored_list, distance_to_goal_list], handle)
 
