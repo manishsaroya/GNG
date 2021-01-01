@@ -200,12 +200,12 @@ if __name__ == "__main__":
     #exp_factor = 30
     used_stored_samples = True
     save_pickle = True
-    map_type = "intel"
+    map_type = "fhw"
     test_list = [0]#, 18, 29, 48, 49, 69, 89, 94, 95, 101, 106, 129, 131, 133, 159]
 
 
     roadmap_types = ["gng", "gng_top", "gng_top_feedback", "prm", "prm_dense_hilbert", "prm_dense"]
-    #roadmap_types = ["gng_top_feedback"]
+    roadmap_types = ["prm_dense_hilbert"]
     data_save_dic = {"gng": "gng_output/", "gng_top": "gng_top_output/", "gng_top_feedback": "gng_top_feedback_output/", "prm": "prm_output/",
                      "prm_dense": "prm_dense_output/", "prm_dense_hilbert": "prm_dense_hilbert_output/"}
 
@@ -218,6 +218,11 @@ if __name__ == "__main__":
         prm_dense_path = "output/max_nodes-freiburg4000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-31-27/prm.pickle"
         prm_dense_hilbert_path = "output/max_nodes-freiburg2000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-36-45/prm.pickle"
         prm_path = "output/max_nodes-freiburg1000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2020-10-11-00-30-17/prm.pickle"
+
+        # PRM star
+        # prm_dense_path = "output/max_nodes-freiburg4000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2021-01-01-02-38-06/prm.pickle"
+        # prm_dense_hilbert_path = "output/max_nodes-freiburg2000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2021-01-01-02-44-47/prm.pickle"
+        # prm_path = "output/max_nodes-freiburg1000-obs-thres0.5-k_nearest-7-connection_radius-5.0-date-2021-01-01-02-45-31/prm.pickle"
         # Param 1
         # gng_top_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-34-58/gng300.pickle"
         # gng_path = "../persistence/output/exp_factor-freiburg9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.78-max_epoch-300-max_edge_age-60-date-2020-10-10-22-19-05/gng300.pickle"
@@ -234,6 +239,10 @@ if __name__ == "__main__":
         prm_dense_path = "output/max_nodes-fhw4000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-38-06/prm.pickle"
         prm_dense_hilbert_path = "output/max_nodes-fhw2000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-51-45/prm.pickle"
         prm_path = "output/max_nodes-fhw1000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2020-10-11-02-53-23/prm.pickle"
+        #PRM star
+        prm_dense_path = "output/max_nodes-fhw4000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2021-01-01-03-35-42/prm.pickle"
+        prm_dense_hilbert_path = "output/max_nodes-fhw2000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2021-01-01-03-47-43/prm.pickle"
+        prm_path = "output/max_nodes-fhw1000-obs-thres0.45-k_nearest-7-connection_radius-5.0-date-2021-01-01-03-39-24/prm.pickle"
 
         gng_top_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-True-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-53-40/gng400.pickle"
         gng_path = "../persistence/output/exp_factor-fhw9-is-topology-feedback-False-is-bias-sampling-False-bias_ratio-0.75-max_epoch-400-max_edge_age-56-date-2020-10-11-03-36-54/gng400.pickle"
