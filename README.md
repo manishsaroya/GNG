@@ -18,3 +18,6 @@ This repository generates navigation roadmaps from probabilistic occupancy maps 
 python persistence/gng_neupy_run.py
 ```
 
+## Roadmap Output
+
+   ![](https://github.com/manishsaroya/GNG/blob/master/gng.gif)
