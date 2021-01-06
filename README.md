@@ -7,12 +7,12 @@ This repository generates navigation roadmaps from probabilistic occupancy maps 
 
 ## Requirements
 - [Gudhi](https://gudhi.inria.fr/python/latest/installation.html)
+- [Neupy](http://neupy.com/pages/installation.html)
 
 ## Usage
 ```
 python persistence/gng_neupy_run.py
 ```
 
-## Roadmap Output
-
+## Roadmap
    ![](https://github.com/manishsaroya/GNG/blob/master/gng.gif)
