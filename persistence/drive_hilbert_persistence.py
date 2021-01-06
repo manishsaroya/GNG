@@ -78,6 +78,7 @@ def get_top_n_persistence_node_location(n, map_type, obs_threshold, location_typ
             if np.isclose(intensity, p[location_type_index], rtol=1e-10, atol=1e-13):
                 top_persistence_node.append(map_data["Xq"][indx])
                 print(j, intensity)
+    #return winner_persistence, life_span[winner_index]
     return top_persistence_node, life_span[winner_index]
 
 

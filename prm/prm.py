@@ -13,9 +13,9 @@ import argparse
 import datetime
 import pickle
 from math import sqrt, log
+import time
 
-
-def save_img(data, graph, dir, save_data=True, save_graph=True):
+def save_img(data, graph, dir, save_data=True, save_graph=True, num_sample=0):
 	"""
 	:param data: map data dictionary
 	:param graph: prm nx graph
@@ -34,9 +34,9 @@ def save_img(data, graph, dir, save_data=True, save_graph=True):
 		pl.setp(line, linewidth=2, color='lightsteelblue')
 	#pl.title('Test image')
 	if save_data:
-		pl.savefig(dir + "prm.png")
+		pl.savefig(dir + str(num_sample) + "prm.png")
 	if save_graph:
-		with open(dir + 'prm.pickle', 'wb') as handle:
+		with open(dir + str(num_sample) + 'prm.pickle', 'wb') as handle:
 			pickle.dump(graph, handle)
 
 
@@ -61,12 +61,14 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--number_of_samples', type=int, default=15000)
 	parser.add_argument('--exp_factor', type=int, default=20)
-	parser.add_argument('--obstacle_threshold', type=float, default=0.45)
-	parser.add_argument('--max_nodes', type=int, default=2000)
-	parser.add_argument('--k_nearest', type=int, default=7)
+	parser.add_argument('--obstacle_threshold', type=float, default=0.25)
+	parser.add_argument('--max_nodes', type=int, default=4000)
+	parser.add_argument('--k_nearest', type=int, default=3900)
 	parser.add_argument('--log_dir', type=str, default='./output')
 	parser.add_argument('--connection_radius', type=float, default=5.0)
-	parser.add_argument('--map_type', type=str, default="fhw")
+	parser.add_argument('--map_type', type=str, default="intel")
+	parser.add_argument('--gamma_prm', type=float, default=30.0)
+	#EDIT PRM STAR PARAM
 	args = parser.parse_args()
 	args.log_dir = './output/max_nodes-' + args.map_type + str(args.max_nodes) + "-obs-thres" + str(args.obstacle_threshold) +\
 				   "-k_nearest-" + \
@@ -75,7 +77,7 @@ if __name__ == "__main__":
 
 	if not os.path.exists(args.log_dir):
 		os.makedirs(args.log_dir)
-
+	tic = time.time()
 	# load map
 	map_data, resolution = load_hilbert_map(map_type=args.map_type)
 	#resolution = 0.2
@@ -99,14 +101,23 @@ if __name__ == "__main__":
 		prm_graph.add_node(indx, pos=(s[0], s[1]))
 	# add graph edges
 	for row, node_adjacency_list in enumerate(indices):
-		args.connection_radius = 150 * sqrt(log(row + 1) / (row+1))
-		print(row, args.connection_radius)
+		args.connection_radius = args.gamma_prm * sqrt(log(row + 1) / (row+1))
+		#print(row, args.connection_radius)
 		for column, other_node in enumerate(node_adjacency_list):
 			distance_metric = distances[row][column] < args.connection_radius
-			collision_metric = collision_check(map_array, sample_list[node_adjacency_list[0]],
-											   sample_list[other_node], args.obstacle_threshold, resolution)
-			validation_metric = node_adjacency_list[0] != other_node
-			if distance_metric and collision_metric and validation_metric:
-				prm_graph.add_edge(node_adjacency_list[0], other_node, distance=distances[row][column])
+			if distance_metric:
+				validation_metric = (node_adjacency_list[0] != other_node) and (node_adjacency_list[0] > other_node)
+				if validation_metric:
+					collision_metric = collision_check(map_array, sample_list[node_adjacency_list[0]],
+													   sample_list[other_node], args.obstacle_threshold, resolution)
+					if collision_metric:
+						prm_graph.add_edge(node_adjacency_list[0], other_node, distance=distances[row][column])
+			#if distance_metric and collision_metric and validation_metric:
+				#prm_graph.add_edge(node_adjacency_list[0], other_node, distance=distances[row][column])
+		if row == 500 or row == 1000 or row == 2000:
+			print("rendering", str(row))
+			print("generation time ", row , args.map_type, " ", time.time()-tic)
+			save_img(map_data, prm_graph, args.log_dir, num_sample=row)
 	print("rendering")
-	save_img(map_data, prm_graph, args.log_dir)
+	print("generation time ", str(4000), args.map_type, " ", time.time() - tic)
+	#save_img(map_data, prm_graph, args.log_dir, num_sample=4000)
