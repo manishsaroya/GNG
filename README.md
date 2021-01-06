@@ -1,9 +1,4 @@
 
-3. You will see output after 10000 iterations as `output.gif`.
-
-   ![](https://github.com/ansrivas/GNG/raw/master/output.gif)
-
-
 # Roadmap-Learning-with-Topology-Informed-Growing-Neural-Gas
 **Contact: saroyam@oregonstate.edu**
 
